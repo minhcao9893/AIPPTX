@@ -20,9 +20,25 @@ import json
 import os
 import re
 import sys
+import threading
 import time
+from datetime import datetime
 from pathlib import Path
 from typing import Dict, List, Tuple, Optional
+
+
+# ── Pipeline Debug Logger ──────────────────────────────────────────────────────
+_DEBUG_LOG = Path(__file__).parent.parent / "pipeline_debug.log"
+
+def _dlog(section: str, content: str) -> None:
+    """Ghi log ra pipeline_debug.log. Luôn append, không block."""
+    try:
+        ts = datetime.now().strftime("%H:%M:%S")
+        line = f"\n{'='*60}\n[{ts}] {section}\n{'='*60}\n{content}\n"
+        with open(_DEBUG_LOG, "a", encoding="utf-8") as f:
+            f.write(line)
+    except Exception:
+        pass
 
 from groq import Groq
 
@@ -208,20 +224,36 @@ def run_stage1_update(
     *,
     dry_run: bool = False,
     verbose: bool = True
-) -> Tuple[int, int]:
+) -> Tuple[int, int, List[str], List[str]]:
     """
     Chạy Stage 1 update trên raw_data đã parse từ DOCX.
-    Returns (n_added_whitelist, n_added_blacklist).
-    Nếu tất cả keys fail → return (0, 0) không crash pipeline.
+    Returns (n_added_whitelist, n_added_blacklist, new_whitelist, new_blacklist).
+    - new_whitelist/new_blacklist: lists đã merge, sẵn sàng truyền vào sanitize()
+    - Save GitHub chạy async/background — không block pipeline
+    - Nếu tất cả keys fail → return (0, 0, old_whitelist, old_blacklist)
     """
     try:
+        print("🧠 [Stage 1] Bắt đầu cập nhật whitelist/blacklist...", flush=True)
         text = _extract_text_from_data(raw_data)
+        print(f"🧠 [Stage 1] Extracted {len(text)} chars, gọi Groq AI...", flush=True)
+
+        # Load lists ngay cả khi không có text (để trả về lists hiện tại)
+        whitelist, blacklist = load_lists()
+
+        # DEBUG: log minimized text + current lists
+        _dlog(
+            "STAGE1 — Text gửi AI (đã minimize)",
+            f"Độ dài: {len(text)} chars\n"
+            f"Whitelist hiện tại ({len(whitelist)}): {whitelist[:30]}\n"
+            f"Blacklist hiện tại ({len(blacklist)}): {blacklist[:30]}\n"
+            f"--- TEXT ---\n{text[:3000]}"
+        )
+
         if not text.strip():
             if verbose:
                 print("🧠 Stage 1: No text to analyze, skipping", file=sys.stderr)
-            return 0, 0
+            return 0, 0, whitelist, blacklist
 
-        whitelist, blacklist = load_lists()
         cfg = _load_config()
         model = cfg.get("stage1_model") or cfg.get("model") or "llama-3.3-70b-versatile"
 
@@ -238,11 +270,20 @@ def run_stage1_update(
         out = _call_groq_json(prompt, model=model)
 
         if out is None:
-            # Tất cả keys fail với retryable error → graceful skip
-            return 0, 0
+            # Tất cả keys fail với retryable error → graceful skip, trả lists cũ
+            _dlog("STAGE1 — Kết quả", "API fail: tất cả keys bị restrict/timeout → dùng lists cũ")
+            return 0, 0, whitelist, blacklist
 
         add_w = [str(x).strip() for x in out.get("add_whitelist", []) if str(x).strip()]
         add_b = [str(x).strip() for x in out.get("add_blacklist", []) if str(x).strip()]
+
+        # DEBUG: log AI response
+        _dlog(
+            "STAGE1 — AI Response",
+            f"add_whitelist ({len(add_w)}): {add_w}\n"
+            f"add_blacklist ({len(add_b)}): {add_b}\n"
+            f"Raw response: {json.dumps(out, ensure_ascii=False)[:1000]}"
+        )
 
         def merge(base: List[str], add: List[str]) -> List[str]:
             seen = set(base)
@@ -259,10 +300,27 @@ def run_stage1_update(
         n_w = len(new_w) - len(whitelist)
         n_b = len(new_b) - len(blacklist)
 
-        if (n_w or n_b) and not dry_run:
-            save_lists(new_w, new_b, message=f"AI update whitelist/blacklist ({n_w}W/{n_b}B)")
+        # DEBUG: log final merge result
+        _dlog(
+            "STAGE1 — Kết quả merge",
+            f"+{n_w} whitelist mới: {add_w}\n"
+            f"+{n_b} blacklist mới: {add_b}\n"
+            f"Tổng whitelist: {len(new_w)} | Tổng blacklist: {len(new_b)}"
+        )
 
-        return n_w, n_b
+        # Save GitHub async/background — không block pipeline
+        if (n_w or n_b) and not dry_run:
+            _save_message = f"AI update whitelist/blacklist ({n_w}W/{n_b}B)"
+            _new_w, _new_b = list(new_w), list(new_b)
+            def _bg_save():
+                try:
+                    save_lists(_new_w, _new_b, message=_save_message)
+                except Exception as _e:
+                    print(f"⚠️ Stage 1 background save failed: {_e}", file=sys.stderr)
+            threading.Thread(target=_bg_save, daemon=True).start()
+
+        print(f"✅ [Stage 1] Xong: +{n_w} whitelist, +{n_b} blacklist (tổng {len(new_w)}W / {len(new_b)}B)", flush=True)
+        return n_w, n_b, new_w, new_b
 
     except Stage1ConfigError as e:
         if verbose:

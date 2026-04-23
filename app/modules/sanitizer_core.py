@@ -7,12 +7,27 @@ Core functions for data masking and sanitization.
 import re
 import json
 from copy import deepcopy
+from datetime import datetime
+from pathlib import Path
 from typing import Any, Dict, List, Optional, Set, Tuple, Union
 
 try:
     from .list_store import load_lists
 except Exception:
     load_lists = None
+
+
+# ── Pipeline Debug Logger ────────────────────────────────────────────────────────
+_DEBUG_LOG = Path(__file__).parent.parent.parent / "pipeline_debug.log"
+
+def _dlog(section: str, content: str) -> None:
+    try:
+        ts = datetime.now().strftime("%H:%M:%S")
+        line = f"\n{'='*60}\n[{ts}] {section}\n{'='*60}\n{content}\n"
+        with open(_DEBUG_LOG, "a", encoding="utf-8") as f:
+            f.write(line)
+    except Exception:
+        pass
 
 # ── Constants ──────────────────────────────────────────────────────────────────────────
 
@@ -206,9 +221,12 @@ class NameMasker:
         result = EMAIL_RE.sub(replace_email, value)
         result = self._apply_blacklist(result)
 
-        category = self._classify(result)
-        if category and category != "Email":
-            return self._alias_for(result, category)
+        # Chỉ classify toàn chuỗi nếu ngắn (≤ 5 words) — tránh mask cả câu dài
+        words = result.split()
+        if len(words) <= 5:
+            category = self._classify(result)
+            if category and category != "Email":
+                return self._alias_for(result, category)
 
         def replace_vn_person(m):
             return self._alias_for(m.group(0), "Person")
@@ -291,20 +309,42 @@ def get_masker() -> NameMasker:
     return _masker
 
 
-def sanitize(raw_data: dict) -> tuple:
-    """Main entry — Name-Preserving Masking. Thread-safe: tạo masker mới mỗi call."""
-    whitelist = []
-    blacklist = []
-    if load_lists is not None:
-        try:
-            whitelist, blacklist = load_lists()
-        except Exception:
-            whitelist, blacklist = [], []
+def sanitize(
+    raw_data: dict,
+    whitelist: Optional[List[str]] = None,
+    blacklist: Optional[List[str]] = None,
+) -> tuple:
+    """
+    Main entry — Name-Preserving Masking. Thread-safe: tạo masker mới mỗi call.
+    Nếu whitelist/blacklist được truyền vào (từ Stage 1 pipeline), dùng luôn.
+    Nếu không, load từ GitHub/cache như cũ (backward compatible).
+    """
+    if whitelist is None or blacklist is None:
+        # Fallback: load từ GitHub/cache như cũ
+        _wl, _bl = [], []
+        if load_lists is not None:
+            try:
+                _wl, _bl = load_lists()
+            except Exception:
+                pass
+        whitelist = whitelist if whitelist is not None else _wl
+        blacklist = blacklist if blacklist is not None else _bl
 
     masker = NameMasker(whitelist=whitelist, blacklist=blacklist)
     skeleton = deepcopy(raw_data)
     skeleton = masker.mask_tree(skeleton)
-    return skeleton, masker.name_map
+
+    # DEBUG: log what was masked
+    name_map = masker.name_map
+    _dlog(
+        "SANITIZE — Kết quả mask",
+        f"Whitelist đang dùng ({len(whitelist)}): {whitelist[:20]}\n"
+        f"Blacklist đang dùng ({len(blacklist)}): {blacklist[:20]}\n"
+        f"Các tên đã được mask ({len(name_map)}):\n"
+        + "\n".join(f"  {alias} → '{original}'" for alias, original in name_map.items())
+    )
+
+    return skeleton, name_map
 
 
 def unmask_names(text: str, name_map: dict) -> str:

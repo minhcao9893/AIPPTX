@@ -30,9 +30,13 @@ from .modules.sanitizer_core import (
 )
 
 
-def sanitize(raw_data: dict) -> tuple[dict, dict]:
+def sanitize(
+    raw_data: dict,
+    whitelist=None,
+    blacklist=None,
+) -> tuple:
     """Main entry — Name-Preserving Masking."""
-    return _sanitize_core(raw_data)
+    return _sanitize_core(raw_data, whitelist=whitelist, blacklist=blacklist)
 
 
 def unmask(text: str, mask_map: dict = None, scale_map: dict = None,

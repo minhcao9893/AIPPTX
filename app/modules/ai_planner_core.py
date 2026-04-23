@@ -10,7 +10,22 @@ import re
 import os
 import time
 import concurrent.futures
+from datetime import datetime
+from pathlib import Path
 from groq import Groq
+
+
+# ── Pipeline Debug Logger ────────────────────────────────────────────────────────
+_DEBUG_LOG = Path(__file__).parent.parent.parent / "pipeline_debug.log"
+
+def _dlog(section: str, content: str) -> None:
+    try:
+        ts = datetime.now().strftime("%H:%M:%S")
+        line = f"\n{'='*60}\n[{ts}] {section}\n{'='*60}\n{content}\n"
+        with open(_DEBUG_LOG, "a", encoding="utf-8") as f:
+            f.write(line)
+    except Exception:
+        pass
 
 
 def _load_config() -> dict:
@@ -453,6 +468,7 @@ def plan_layout(skeleton: dict, design_hints: dict = None) -> dict:
             _f.write(f"MODE: PARALLEL — {n_slides} slides → {n_chunks} chunks × {CHUNK_SIZE} | keys available: {n_keys}\n")
 
         layout_plan = _plan_parallel(skeleton, design_hints or {}, keys)
+        _dlog("AI PLANNER — PARALLEL", f"{n_slides} slides | {n_keys} keys\n{json.dumps(layout_plan, ensure_ascii=False)[:2000]}")
 
     else:
         # ── SEQUENTIAL MODE (cũ) ────────────────────────────────────────────
@@ -468,6 +484,7 @@ def plan_layout(skeleton: dict, design_hints: dict = None) -> dict:
             _f.write("USER PROMPT (enriched skeleton)\n")
             _f.write(f"{'='*70}\n")
             _f.write(prompt + "\n")
+        _dlog("AI PLANNER — SEQUENTIAL PROMPT", f"{n_slides} slides | keys: {n_keys}\n{prompt[:2000]}")
 
         last_err = None
         max_retries = 3
@@ -511,6 +528,7 @@ def plan_layout(skeleton: dict, design_hints: dict = None) -> dict:
         with open(_debug_log_path, "a", encoding="utf-8") as _f:
             _f.write(f"\n{'='*70}\nAI RAW RESPONSE\n{'='*70}\n")
             _f.write(raw_response + "\n")
+        _dlog("AI PLANNER — SEQUENTIAL RESPONSE", raw_response[:3000])
 
         clean = re.sub(r"```(?:json)?|```", "", raw_response).strip()
         clean = re.sub(r'[\x00-\x08\x0b\x0c\x0e-\x1f\x7f]', '', clean)

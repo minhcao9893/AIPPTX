@@ -1,0 +1,293 @@
+
+============================================================
+[19:08:28] SANITIZE — Kết quả mask
+============================================================
+Whitelist đang dùng (0): []
+Blacklist đang dùng (0): []
+Các tên đã được mask (7):
+  Company-A → 'Báo cáo Hiệu suất Kinh doanh Q2 2025 công ty Pokemon'
+  Company-B → 'Báo cáo Hiệu suất Kinh doanh Q2 2025 công ty Pokemon
+Phòng ban Sale báo cáo tình hình kinh doanh và hiệu suất Kinh doanh trong thời gian qua…'
+  Region-1 → 'Việt Nam'
+  Region-2 → 'Hà Nội'
+  Region-3 → 'Miền Bắc'
+  Region-4 → 'Miền Trung'
+  Region-5 → 'Miền Nam'
+
+============================================================
+[19:08:31] AI PLANNER — SEQUENTIAL PROMPT
+============================================================
+4 slides | keys: 8
+Analyze this presentation skeleton and return layout_plan JSON.
+Each slide has content_summary (structure).
+
+Design constraints: primary=#1a1a1a accent=#ff6b35 font=Arial
+
+
+IMPORTANT: All insight_text and design_notes MUST be written in English.
+
+CHART TYPE GUIDE (when chart_hint=true):
+  pie         → ≤8 rows, 2 cols, share/proportion
+  line        → time-series, trends over periods
+  bar         → single numeric series, ranking/comparison
+  grouped_bar → multiple numeric series, side-by-side
+
+LAYOUT GUIDE:
+  title_only  → cover slide
+  split_left  → left 60%: chart+table | right 40%: insight (DEFAULT for data slides)
+  image_split → left 60%: 3 image placeholders | right 40%: insight (no table data)
+  one_col     → bullet/text only (use sparingly)
+
+Skeleton:
+{
+  "slides": [
+    {
+      "index": 1,
+      "title": "Company-A",
+      "type": "text",
+      "chart_hint": false,
+      "chart_type_hint": "none",
+      "content": "Phòng ban Sale báo cáo tình hình kinh doanh và hiệu suất Kinh doanh trong thời gian qua…",
+      "images": [],
+      "image_count": 0,
+      "content_summary": "[slide type: text] | [text: 1 lines | preview: Phòng ban Sale báo cáo tình hình kinh doanh và hiệu suất Kinh doanh trong thời gian qua…] | [title: Company-B]"
+    },
+    {
+      "index": 2,
+      "title": "Tổng quan kết quả",
+      "type": "bullet",
+      "chart_hint": false,
+      "chart_type_hint": "none",
+      "content": [
+        "- Doanh thu tăng 25% so với Q1",
+        "- Ra mắt 3 sản phẩm mới tại Region-2",
+        "- Mở rộng sang thị trường miền Trung Region-1",
+        "- Tiết kiệm chi phí logistics 12%"
+      ],
+      "images": [
+        "img_a22cd078.png"
+      ],
+      "image_count": 1,
+      "content_summary": "[slide type: bullet] | [4 bullet points] | [bullets_preview: ['- Doanh thu tăng 25% so với Q1', '- Ra mắt 3 sản phẩm mới tại Region-2', '- Mở rộng sang thị trường miền Trung Region-1']] | [title: Tổng quan kết quả]"
+    },
+    {
+      "index": 3,
+      "title": "Doan
+
+============================================================
+[19:08:36] AI PLANNER — SEQUENTIAL RESPONSE
+============================================================
+```json
+{
+  "slides": [
+    {
+      "index": 1,
+      "layout": "one_col",
+      "chart_type": "none",
+      "color_scheme": "neutral",
+      "insight_text": "This slide provides an introduction to Company-A and sets the stage for the report on the business situation and performance.",
+      "design_notes": "Using a simple one-column layout for the title slide to focus attention on the company introduction.",
+      "elements": [
+        { "type": "title", "position": "center", "font_size": 36 },
+        { "type": "text", "position": "bottom", "font_size": 18 }
+      ]
+    },
+    {
+      "index": 2,
+      "layout": "image_split",
+      "chart_type": "none",
+      "color_scheme": "warm",
+      "insight_text": "The company has achieved significant milestones, including a 25% increase in revenue compared to Q1, and the launch of 3 new products in Region-2.",
+      "design_notes": "Using an image split layout to highlight the achievements and provide visual interest.",
+      "elements": [
+        { "type": "bullet_list", "position": "right", "font_size": 18 },
+        { "type": "image", "position": "left", "font_size": 0 }
+      ]
+    },
+    {
+      "index": 3,
+      "layout": "split_left",
+      "chart_type": "bar",
+      "color_scheme": "corporate_blue",
+      "insight_text": "Region-5 led with 1750 units in Q2, a 19% increase from Q1, while Region-3 and Region-4 saw increases of 15% and 21%, respectively.",
+      "design_notes": "Using a split-left layout to showcase the table data and provide a bar chart for visual comparison.",
+      "elements": [
+        { "type": "table", "position": "left", "font_size": 12 },
+        { "type": "chart", "position": "left", "font_size": 12 },
+        { "type": "text", "position": "right", "font_size": 18 }
+      ]
+    },
+    {
+      "index": 4,
+      "layout": "split_left",
+      "chart_type": "bar",
+      "color_scheme": "corporate_blue",
+      "insight_text": "Region-5 maintained its lead with 1750 units in Q2, followed by Region-3 and Region-4 with 980 and 750 units, respectively.",
+      "design_notes": "Using a split-left layout to showcase the table data and provide a bar chart for visual comparison.",
+      "elements": [
+        { "type": "table", "position": "left", "font_size": 12 },
+        { "type": "chart", "position": "left", "font_size": 12 },
+        { "type": "text", "position": "right", "font_size": 18 }
+      ]
+    }
+  ]
+}
+```
+
+============================================================
+[19:27:06] STAGE1 — Text gửi AI (đã minimize)
+============================================================
+Độ dài: 427 chars
+Whitelist hiện tại (0): []
+Blacklist hiện tại (0): []
+--- TEXT ---
+{Title}
+Báo cáo Hiệu suất Kinh doanh Q công ty Pokemon
+Phòng ban Sale báo cáo tình hình kinh doanh và hiệu suất Kinh doanh trong thời gian qua…
+Tổng quan kết quả
+- Doanh thu so với Q
+- Ra mắt sản phẩm mới tại Hà Nội
+- Mở rộng sang thị trường miền Trung Việt Nam
+- Tiết kiệm chi phí logistics
+Doanh thu theo khu vực Q Q
+Khu vực Q Q
+Miền Bắc
+Miền Trung
+Miền Nam
+Doanh thu theo khu vực Q Q
+Khu vực Q Q
+Miền Bắc
+Miền Trung
+Miền Nam
+
+============================================================
+[19:27:12] SANITIZE — Kết quả mask
+============================================================
+Whitelist đang dùng (0): []
+Blacklist đang dùng (0): []
+Các tên đã được mask (6):
+  Company-A → 'Báo cáo Hiệu suất Kinh doanh Q2 2025 công ty'
+  Region-1 → 'Việt Nam'
+  Region-2 → 'Hà Nội'
+  Region-3 → 'Miền Bắc'
+  Region-4 → 'Miền Trung'
+  Region-5 → 'Miền Nam'
+
+============================================================
+[19:27:13] AI PLANNER — SEQUENTIAL PROMPT
+============================================================
+4 slides | keys: 8
+Analyze this presentation skeleton and return layout_plan JSON.
+Each slide has content_summary (structure).
+
+Design constraints: primary=#1a1a1a accent=#ff6b35 font=Arial
+
+
+IMPORTANT: All insight_text and design_notes MUST be written in English.
+
+CHART TYPE GUIDE (when chart_hint=true):
+  pie         → ≤8 rows, 2 cols, share/proportion
+  line        → time-series, trends over periods
+  bar         → single numeric series, ranking/comparison
+  grouped_bar → multiple numeric series, side-by-side
+
+LAYOUT GUIDE:
+  title_only  → cover slide
+  split_left  → left 60%: chart+table | right 40%: insight (DEFAULT for data slides)
+  image_split → left 60%: 3 image placeholders | right 40%: insight (no table data)
+  one_col     → bullet/text only (use sparingly)
+
+Skeleton:
+{
+  "slides": [
+    {
+      "index": 1,
+      "title": "{Title}",
+      "type": "bullet",
+      "chart_hint": false,
+      "chart_type_hint": "none",
+      "content": [
+        "Company-A Pokemon",
+        "Phòng ban Sale báo cáo tình hình kinh doanh và hiệu suất Kinh doanh trong thời gian qua…"
+      ],
+      "images": [],
+      "image_count": 0,
+      "content_summary": "[slide type: bullet] | [2 bullet points] | [bullets_preview: ['Company-A Pokemon', 'Phòng ban Sale báo cáo tình hình kinh doanh và hiệu suất Kinh doanh trong thời g']] | [title: {Title}]"
+    },
+    {
+      "index": 2,
+      "title": "Tổng quan kết quả",
+      "type": "bullet",
+      "chart_hint": false,
+      "chart_type_hint": "none",
+      "content": [
+        "- Doanh thu tăng 25% so với Q1",
+        "- Ra mắt 3 sản phẩm mới tại Region-2",
+        "- Mở rộng sang thị trường miền Trung Region-1",
+        "- Tiết kiệm chi phí logistics 12%"
+      ],
+      "images": [
+        "img_c5a2a94a.png"
+      ],
+      "image_count": 1,
+      "content_summary": "[slide type: bullet] | [4 bullet points] | [bullets_preview: ['- Doanh thu tăng 25% so với Q1', '- Ra mắt 3 sản phẩm mới tại Region-2', '- Mở rộng sang thị trường miền Trung Region-1']] | [ti
+
+============================================================
+[19:27:15] AI PLANNER — SEQUENTIAL RESPONSE
+============================================================
+```json
+{
+  "slides": [
+    {
+      "index": 1,
+      "layout": "one_col",
+      "chart_type": "none",
+      "color_scheme": "neutral",
+      "insight_text": "Introduction to Company-A's business performance and sales report.",
+      "design_notes": "Simple title slide with introductory text, no chart or data required.",
+      "elements": [
+        { "type": "title", "position": "top", "font_size": 24 },
+        { "type": "text", "position": "center", "font_size": 18 }
+      ]
+    },
+    {
+      "index": 2,
+      "layout": "image_split",
+      "chart_type": "none",
+      "color_scheme": "warm",
+      "insight_text": "Notable business achievements include a 25% increase in revenue and the launch of 3 new products in Region-2.",
+      "design_notes": "Using image_split layout to highlight key achievements with an accompanying image.",
+      "elements": [
+        { "type": "image", "position": "left", "font_size": 0 },
+        { "type": "bullet_list", "position": "right", "font_size": 16 }
+      ]
+    },
+    {
+      "index": 3,
+      "layout": "split_left",
+      "chart_type": "bar",
+      "color_scheme": "corporate_blue",
+      "insight_text": "Region-5 led with 1750 units in Q2, followed by Region-3 with 980 units, and Region-4 with 750 units.",
+      "design_notes": "Utilizing split_left layout to compare regional revenue between Q1 and Q2 with a bar chart.",
+      "elements": [
+        { "type": "chart", "position": "left", "font_size": 14 },
+        { "type": "table", "position": "left", "font_size": 12 },
+        { "type": "text", "position": "right", "font_size": 16 }
+      ]
+    },
+    {
+      "index": 4,
+      "layout": "split_left",
+      "chart_type": "bar",
+      "color_scheme": "corporate_blue",
+      "insight_text": "Region-5 led with 1750 units in Q2, followed by Region-3 with 980 units, and Region-4 with 750 units.",
+      "design_notes": "Similar to slide 3, using split_left layout to compare regional revenue with a bar chart.",
+      "elements": [
+        { "type": "chart", "position": "left", "font_size": 14 },
+        { "type": "table", "position": "left", "font_size": 12 },
+        { "type": "text", "position": "right", "font_size": 16 }
+      ]
+    }
+  ]
+}
+```

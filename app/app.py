@@ -583,22 +583,44 @@ def _run_pipeline(job_id: str, docx_path: str, source_filename: str,
         n_slides  = len(raw_data.get("slides", []))
         _update(job_id, f"✅ Đọc xong — {n_slides} slides")
 
-        # Stage 1: Auto-update whitelist/blacklist
-        # Chạy ngay sau parse, trước sanitize. Nếu fail thì skip, không crash pipeline.
+        # Stage 1: Classify — auto-update whitelist/blacklist, trả lists mới ngay
+        # Save GitHub chạy background, không block. Sanitize (Step 2) hưởng lợi ngay
+        # từ blacklist mới trong cùng 1 lần chạy.
         _update(job_id, "🧠 Stage 1: Cập nhật whitelist/blacklist...")
+        _s1_whitelist = None
+        _s1_blacklist = None
         try:
             from .stage1_list_updater import run_stage1_update
-            n_w, n_b = run_stage1_update(raw_data, dry_run=False, verbose=False)
-            _update(job_id, f"✅ Stage 1: +{n_w} whitelist, +{n_b} blacklist")
+            _n_w, _n_b, _s1_whitelist, _s1_blacklist = run_stage1_update(
+                raw_data, dry_run=False, verbose=True
+            )
+            _update(job_id, f"✅ Stage 1: +{_n_w} whitelist, +{_n_b} blacklist")
         except Exception as _s1_err:
             import sys as _sys
+            import traceback as _tb
+            _err_detail = _tb.format_exc()
             print(f"⚠️ Stage 1 failed (continuing): {_s1_err}", file=_sys.stderr)
+            print(_err_detail, file=_sys.stderr)
+            # Ghi lỗi vào pipeline_debug.log để debug
+            try:
+                from pathlib import Path as _Path
+                _dlog_path = _Path(__file__).parent.parent / "pipeline_debug.log"
+                from datetime import datetime as _dt
+                _ts = _dt.now().strftime("%H:%M:%S")
+                with open(_dlog_path, "a", encoding="utf-8") as _f:
+                    _f.write(f"\n{'='*60}\n[{_ts}] STAGE1 — EXCEPTION\n{'='*60}\n{_err_detail}\n")
+            except Exception:
+                pass
             _update(job_id, "⚠️ Stage 1 skipped (tiếp tục pipeline...)")
 
-        # Step 2: Sanitize
+        # Step 2: Sanitize — truyền thẳng lists từ Stage 1 nếu có, không load lại
         _update(job_id, "🔒 Đang mã hóa dữ liệu nhạy cảm...")
         from .sanitizer import sanitize, build_skeleton_metadata
-        skeleton, name_map = sanitize(raw_data)
+        skeleton, name_map = sanitize(
+            raw_data,
+            whitelist=_s1_whitelist,
+            blacklist=_s1_blacklist,
+        )
         skeleton = build_skeleton_metadata(skeleton)
         _update(job_id, f"✅ Đã mask {len(name_map)} tên (Company/Region/Person)")
 

@@ -239,10 +239,27 @@ def _run_generate(data: dict, input_text: str):
         n_slides = len(raw_data.get('slides', []))
         _set_progress(22, f"Đọc xong — {n_slides} slides")
 
+        # 2b. Stage 1: Classify — auto-update whitelist/blacklist
+        _set_progress(23, "🧠 Stage 1: Cập nhật whitelist/blacklist...")
+        _s1_whitelist = None
+        _s1_blacklist = None
+        try:
+            from ..stage1_list_updater import run_stage1_update
+            import sys as _sys1
+            _n_w, _n_b, _s1_whitelist, _s1_blacklist = run_stage1_update(
+                raw_data, dry_run=False, verbose=False
+            )
+            print(f"✅ [Stage 1] Xong: +{_n_w} whitelist, +{_n_b} blacklist (tổng {len(_s1_whitelist)}W / {len(_s1_blacklist)}B)", flush=True)
+            _set_progress(24, f"✅ Stage 1: +{_n_w} whitelist, +{_n_b} blacklist")
+        except Exception as _s1_err:
+            import sys as _sys1
+            print(f"⚠️ Stage 1 failed (continuing): {_s1_err}", flush=True)
+            _set_progress(24, "⚠️ Stage 1 skipped (tiếp tục pipeline...)")
+
         # 3. Sanitize
         _set_progress(25, "Đang mask dữ liệu nhạy cảm...")
         from .sanitizer_core import sanitize, build_skeleton_metadata
-        skeleton, name_map = sanitize(raw_data)
+        skeleton, name_map = sanitize(raw_data, whitelist=_s1_whitelist, blacklist=_s1_blacklist)
         skeleton = build_skeleton_metadata(skeleton)
         _set_progress(35, f"Đã mask {len(name_map)} tên")
 
