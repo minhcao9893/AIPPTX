@@ -1,0 +1,6 @@
+python-pptx
+groq
+flask
+lxml
+python-docx
+openpyxl

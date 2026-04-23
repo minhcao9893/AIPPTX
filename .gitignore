@@ -1,0 +1,27 @@
+# Local secrets / config
+Node/
+GitPortable/
+config.json
+keys.txt
+*.env
+
+# Generated intermediate artifacts
+ai_debug.log
+skeleton.json
+layout_plan.json
+mask_map.json
+name_map.json
+
+# Output
+output/
+
+# Local list cache (whitelist/blacklist)
+.lists_cache/
+
+# OS / tooling
+__pycache__/
+*.pyc
+
+input/
+*.bat
+session-log.md

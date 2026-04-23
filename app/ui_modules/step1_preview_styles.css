@@ -1,0 +1,169 @@
+/*
+  step1_preview_styles.css
+  ========================
+  CSS cho Right Panel của STEP 1 — Word Preview + Editor
+*/
+
+/* ── Right Panel — 50% ─────────────────────────────────────────────── */
+#step1-right {
+  width: 50%;
+  display: flex;
+  flex-direction: column;
+  background: #0f1117;
+  overflow: hidden;
+}
+
+.preview-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 24px;
+  border-bottom: 1px solid #1e2a3a;
+  background: #13192a;
+  flex-shrink: 0;
+}
+
+.preview-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: #475569;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.preview-title .filename {
+  color: #38bdf8;
+  max-width: 220px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.preview-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.btn-preview-action {
+  padding: 6px 14px;
+  background: #1a2235;
+  border: 1px solid #2d4263;
+  border-radius: 6px;
+  font-size: 12px;
+  color: #94a3b8;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-weight: 500;
+}
+.btn-preview-action:hover { border-color: #38bdf8; color: #38bdf8; }
+.btn-preview-action.save { border-color: #10b981; color: #34d399; }
+
+/* ── Preview Content Area ──────────────────────────────────────────── */
+#preview-content-area {
+  flex: 1;
+  overflow-y: auto;
+  padding: 28px 32px;
+}
+
+/* Empty State */
+.preview-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  gap: 16px;
+  color: #2d4263;
+}
+
+.preview-empty-icon { font-size: 56px; opacity: 0.4; }
+.preview-empty-text { font-size: 14px; color: #344156; text-align: center; line-height: 1.6; }
+
+/* Word Doc Render */
+.word-doc-render {
+  background: white;
+  border-radius: 8px;
+  padding: 48px 52px;
+  min-height: 100%;
+  box-shadow: 0 4px 24px rgba(0,0,0,0.3);
+}
+
+/* Editable areas */
+.word-doc-render [contenteditable] {
+  outline: none;
+  border-radius: 3px;
+  transition: background 0.15s;
+}
+
+.word-doc-render [contenteditable]:hover {
+  background: rgba(56, 189, 248, 0.06);
+}
+
+.word-doc-render [contenteditable]:focus {
+  background: rgba(56, 189, 248, 0.10);
+  box-shadow: 0 0 0 2px rgba(56, 189, 248, 0.2);
+}
+
+/* Trigger highlight */
+.trigger-tag {
+  display: inline-block;
+  background: #fef3c7;
+  color: #92400e;
+  border: 1px solid #fbbf24;
+  border-radius: 4px;
+  padding: 1px 6px;
+  font-size: 11px;
+  font-family: 'Cascadia Code', monospace;
+  font-weight: 600;
+}
+
+.trigger-tag.slide-trigger { background: #dbeafe; color: #1e40af; border-color: #93c5fd; }
+.trigger-tag.chart-trigger { background: #dcfce7; color: #166534; border-color: #86efac; }
+
+/* Slide section separator */
+.slide-section-divider {
+  border: none;
+  border-top: 2px dashed #e0e7ff;
+  margin: 20px 0;
+  position: relative;
+}
+
+.slide-section-divider::after {
+  content: attr(data-slide-label);
+  position: absolute;
+  top: -10px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: white;
+  padding: 0 10px;
+  font-size: 11px;
+  color: #6366f1;
+  font-weight: 600;
+  font-family: 'Cascadia Code', monospace;
+}
+
+/* Table in preview */
+.word-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 12px 0;
+  font-size: 12px;
+  color: #1e293b;
+}
+
+.word-table th, .word-table td {
+  border: 1px solid #e2e8f0;
+  padding: 6px 10px;
+  text-align: left;
+}
+
+.word-table th {
+  background: #f1f5f9;
+  font-weight: 600;
+}
+
+/* Scrollbar custom */
+#preview-content-area::-webkit-scrollbar { width: 6px; }
+#preview-content-area::-webkit-scrollbar-track { background: transparent; }
+#preview-content-area::-webkit-scrollbar-thumb { background: #1e3a5f; border-radius: 4px; }

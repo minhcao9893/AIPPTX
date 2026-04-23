@@ -1,0 +1,384 @@
+<!--
+  app_shell.html — AIPPTX v2 UI Shell
+  =====================================
+  Layout: 2 cột full-screen, 2 bước lớn (Step I + Step II).
+  Mỗi bước: LEFT = setup, RIGHT = preview/canvas.
+  
+  JS modules:
+    step1_input.js        — file picker, toggle mode 1/2
+    step1_trigger.js      — popup hướng dẫn cấu trúc trigger
+    step1_ai_processor.js — mode 2: Word dài → AI → structured
+    step1_preview.js      — Word preview + editable
+    step2_design.js       — theme + 5 màu cơ bản
+    step2_slides.js       — danh sách slide cards
+    step2_layout.js       — layout picker + % ô config
+    step2_canvas.js       — render preview canvas (colored blocks)
+    step2_export.js       — Tạo PPTX + download + progress
+    step2_preview.js      — Preview pane realtime (theme + advanced)
+-->
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AIPPTX — AI PowerPoint Generator</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;0,600;1,400;1,500&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/static/ui_modules/app_shell_styles.css">
+</head>
+<body>
+
+<!-- ═══════════════ STEP I — INPUT ═══════════════ -->
+<div class="step-page active" id="page-step1">
+  <!-- Top bar -->
+  <div class="topbar">
+    <span class="topbar-logo">AIPPTX</span>
+    <span class="topbar-sep">•</span>
+    <span class="topbar-step">Bước I — Chọn & cấu trúc nội dung</span>
+    <button class="btn-nav btn-nav-next" onclick="Step1.goNext()">Tiếp theo →</button>
+  </div>
+
+  <!-- Body -->
+  <div class="split-body">
+
+    <!-- LEFT: Setup -->
+    <div class="panel-left w50">
+
+      <!-- Mode toggle -->
+      <div id="s1-mode-panel">
+        <div class="panel-title" style="margin-bottom:10px;">CHẾ ĐỘ NHẬP LIỆU</div>
+        <div class="toggle-group">
+          <button class="toggle-opt active" id="s1-mode-trigger" onclick="Step1.setMode(1)">
+            📌 Trigger có sẵn
+          </button>
+          <button class="toggle-opt" id="s1-mode-ai" onclick="Step1.setMode(2)">
+            🤖 AI phân tích
+          </button>
+        </div>
+      </div>
+
+      <!-- Mode 1 panel -->
+      <div id="s1-panel-mode1" class="panel-body">
+        <div class="section-label">Chọn file Word</div>
+
+        <!-- File picker zone -->
+        <div id="s1-filepicker" onclick="Step1.pickFile()">
+          <div class="fp-icon">📄</div>
+          <div class="fp-label" id="s1-fp-label">Nhấn để chọn file .docx từ bất kỳ thư mục</div>
+        </div>
+        <input type="file" id="s1-file-input" accept=".docx" style="display:none" onchange="Step1.onFileSelected(this)">
+
+        <!-- Selected file info -->
+        <div id="s1-file-info" style="display:none;" class="card" style="margin-bottom:12px;">
+          <div style="font-size:12px; color:var(--txt-muted);">File đã chọn</div>
+          <div style="font-size:13px; font-weight:700; color:var(--txt); margin-top:4px;" id="s1-file-name">—</div>
+          <div style="font-size:11px; color:var(--txt-dim); margin-top:2px;" id="s1-file-path">—</div>
+        </div>
+
+        <div style="display:flex; gap:8px; align-items:center; margin-bottom:16px;">
+          <button class="btn btn-ghost btn-sm" onclick="Step1.showTriggerGuide()">
+            📋 Hướng dẫn cấu trúc Trigger
+          </button>
+        </div>
+
+        <div class="section-label">Xem trước</div>
+        <button class="btn btn-primary" onclick="Step1.previewFile()" style="width:100%;">
+          👁 Xem trước nội dung
+        </button>
+      </div>
+
+      <!-- Mode 2 panel -->
+      <div id="s1-panel-mode2" class="panel-body" style="display:none;">
+        <div class="section-label">Chọn file Word (chưa có cấu trúc)</div>
+
+        <div id="s1-filepicker-2" class="card" onclick="Step1.pickFile2()" style="cursor:pointer; text-align:center; padding:24px;">
+          <div class="fp-icon" style="font-size:28px;">🗂</div>
+          <div style="font-size:13px; color:var(--txt-muted); margin-top:6px;" id="s1-fp2-label">Nhấn để chọn file .docx</div>
+        </div>
+        <input type="file" id="s1-file-input-2" accept=".docx" style="display:none" onchange="Step1.onFile2Selected(this)">
+
+        <!-- AI processing -->
+        <div id="s1-ai-status" style="margin-top:14px; display:none;">
+          <div class="spinner"></div>
+          <div>
+            <div style="font-size:13px; color:var(--txt); font-weight:600;">AI đang phân tích...</div>
+            <div id="s1-ai-msg" style="font-size:11px; color:var(--txt-muted); margin-top:2px;">Đang mask dữ liệu nhạy cảm</div>
+          </div>
+        </div>
+
+        <div class="section-label" style="margin-top:16px;">Cài đặt AI</div>
+        <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:10px;">
+          <span style="font-size:12px; color:var(--txt-muted);">Số slide tối đa</span>
+          <input type="number" class="pct-inp" id="s1-ai-max-slides" value="10" min="3" max="30" style="width:60px;">
+        </div>
+        <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:10px;">
+          <span style="font-size:12px; color:var(--txt-muted);">Ngôn ngữ đầu ra</span>
+          <select class="dropdown" style="width:120px;" id="s1-ai-lang">
+            <option value="vi">Tiếng Việt</option>
+            <option value="en">English</option>
+          </select>
+        </div>
+
+        <button class="btn btn-primary" id="s1-btn-analyze" onclick="Step1.runAIAnalysis()" style="width:100%; margin-top:12px;">
+          🤖 Phân tích bằng AI
+        </button>
+      </div>
+
+    </div><!-- /panel-left -->
+
+    <!-- RIGHT: Preview + Edit -->
+    <div class="panel-right">
+      <div id="s1-empty-state">
+        <div class="es-icon">📝</div>
+        <div class="es-text">Chọn file Word để xem trước nội dung</div>
+        <div style="font-size:11px; color:var(--txt-dim); margin-top:4px;">Bạn có thể chỉnh sửa trực tiếp sau khi load</div>
+      </div>
+
+      <div id="s1-preview-area" style="display:none;">
+        <div id="s1-editor-toolbar">
+          <span class="panel-badge" id="s1-preview-mode-badge">TRIGGER MODE</span>
+          <span style="font-size:11px; color:var(--txt-muted); flex:1;" id="s1-preview-info">—</span>
+          <button class="btn btn-ghost btn-sm" onclick="Step1.saveEdited()">💾 Lưu chỉnh sửa</button>
+          <button class="btn btn-ghost btn-sm" onclick="Step1.copyContent()">📋 Copy</button>
+        </div>
+        <div id="s1-editor" contenteditable="true" placeholder="Nội dung file Word sẽ xuất hiện ở đây..." style="white-space:pre-wrap;"></div>
+      </div>
+    </div>
+
+  </div><!-- /split-body -->
+</div><!-- /page-step1 -->
+
+
+<!-- ═══════════════ STEP II — DESIGN ═══════════════ -->
+<div class="step-page" id="page-step2">
+  <!-- Top bar -->
+  <div class="topbar">
+    <span class="topbar-logo">AIPPTX</span>
+    <span class="topbar-sep">•</span>
+    <span class="topbar-step">Bước II — Thiết kế & Layout</span>
+    <button class="btn-nav btn-nav-back" onclick="Step2.goBack()">← Quay lại</button>
+    <button class="btn-nav btn-generate" onclick="Step2.generatePPTX()">🎯 Tạo PPTX</button>
+  </div>
+
+  <div class="split-body">
+
+    <!-- LEFT: Design (30%) -->
+    <div class="panel-left w30" id="s2-design-panel">
+      <div class="panel-header">
+        <span class="panel-title">Design</span>
+        <div style="display:flex; gap:0; margin-left:auto; border:1px solid var(--border); border-radius:6px; overflow:hidden;">
+          <button id="s2-design-tab-theme"
+                  onclick="if(typeof Step2DesignPanel!=='undefined')Step2DesignPanel.switchTab('theme')"
+                  style="padding:4px 12px; font-size:10px; font-weight:700; letter-spacing:0.5px;
+                         background:none; border:none; color:var(--accent); cursor:pointer;
+                         border-bottom:2px solid var(--accent); font-family:Syne,sans-serif;">
+            Theme
+          </button>
+          <button id="s2-design-tab-advanced"
+                  onclick="if(typeof Step2DesignPanel!=='undefined')Step2DesignPanel.switchTab('advanced')"
+                  style="padding:4px 12px; font-size:10px; font-weight:700; letter-spacing:0.5px;
+                         background:none; border:none; border-left:1px solid var(--border);
+                         color:var(--txt-muted); cursor:pointer; border-bottom:2px solid transparent;
+                         font-family:Syne,sans-serif;">
+            Advanced
+          </button>
+        </div>
+      </div>
+
+      <!-- Tab: Theme (step2_design.js) -->
+      <div class="panel-body" id="s2-design-body" style="display:flex;flex-direction:column;">
+        <!-- Injected by step2_design.js -->
+      </div>
+      <!-- Theme tab footer — nút Preview -->
+      <div id="s2-theme-footer" style="padding:10px 16px; border-top:1px solid var(--border); display:flex; gap:8px; flex-shrink:0; background:var(--bg-card);">
+        <button class="btn btn-ghost btn-sm s2-preview-toggle-btn" onclick="if(typeof Preview!=='undefined')Preview.toggle()"
+                style="margin-left:auto;">👁 Preview</button>
+      </div>
+
+      <!-- Tab: Advanced Design — Component Accordion -->
+      <div id="s2-advanced-design" style="display:none; flex-direction:column; flex:1; overflow:hidden;">
+        <!-- Accordion list (injected by step2_design_panel.js) -->
+        <div id="s2-adv-body" style="flex:1; overflow-y:auto;">Đang tải...</div>
+        <!-- Footer: Save / Reset / Preview -->
+        <div style="padding:10px 16px; border-top:1px solid var(--border); display:flex; gap:8px; flex-shrink:0; background:var(--bg-card);">
+          <button class="btn btn-primary btn-sm" onclick="if(typeof Step2DesignPanel!=='undefined')Step2DesignPanel.saveAdvanced()">💾 Lưu</button>
+          <button class="btn btn-ghost btn-sm" onclick="if(typeof Step2DesignPanel!=='undefined')Step2DesignPanel.resetAdvanced()">↩ Reset</button>
+          <button class="btn btn-ghost btn-sm s2-preview-toggle-btn" onclick="if(typeof Preview!=='undefined')Preview.toggle()"
+                  style="margin-left:auto;">👁 Preview</button>
+          <span id="s2-adv-msg" style="font-size:11px; color:var(--accent4); align-self:center; display:none;"></span>
+        </div>
+      </div>
+    </div>
+
+    <!-- MID: Slide cards (20%) -->
+    <div class="panel-mid">
+      <div class="panel-header">
+        <span class="panel-title">Slides</span>
+        <span class="panel-badge" id="s2-slide-count">0</span>
+      </div>
+      <!-- Global Apply-All header -->
+      <div id="s2-global-header" style="display:none;">
+        <div class="global-header-row">
+          <span class="global-header-label">⚡ Áp dụng tất cả</span>
+        </div>
+        <div class="global-toggle-group">
+          <!-- Chart -->
+          <div class="global-toggle-row" id="s2-gh-chart-row" style="display:none;">
+            <span class="global-toggle-label">📈 Vẽ Chart</span>
+            <div class="mini-toggle">
+              <button class="mini-opt" id="s2-gh-chart-on"  onclick="Step2Slides.setAllChart(true);event.stopPropagation()">ON</button>
+              <button class="mini-opt" id="s2-gh-chart-off" onclick="Step2Slides.setAllChart(false);event.stopPropagation()">OFF</button>
+            </div>
+          </div>
+          <!-- Content -->
+          <div class="global-toggle-row">
+            <span class="global-toggle-label">📝 Content</span>
+            <div class="mini-toggle">
+              <button class="mini-opt" id="s2-gh-content-on"  onclick="Step2Slides.setAllContent(true);event.stopPropagation()">ON</button>
+              <button class="mini-opt" id="s2-gh-content-off" onclick="Step2Slides.setAllContent(false);event.stopPropagation()">OFF</button>
+            </div>
+          </div>
+          <!-- Insight -->
+          <div class="global-toggle-row">
+            <span class="global-toggle-label">💡 Insight</span>
+            <div class="mini-toggle">
+              <button class="mini-opt" id="s2-gh-insight-on"  onclick="Step2Slides.setAllInsight(true);event.stopPropagation()">ON</button>
+              <button class="mini-opt" id="s2-gh-insight-off" onclick="Step2Slides.setAllInsight(false);event.stopPropagation()">OFF</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="panel-body" id="s2-slides-list">
+        <!-- Injected by step2_slides.js -->
+      </div>
+    </div>
+
+    <!-- RIGHT: Layout config + Canvas (50%) -->
+    <div class="panel-right" id="s2-right-panel">
+
+      <!-- Component selector bar -->
+      <div id="s2-component-bar">
+        <span style="font-size:11px; color:var(--txt-muted); margin-right:4px;">Thành phần:</span>
+        <span id="s2-comp-chips"></span>
+      </div>
+
+      <!-- Layout selector + % bar -->
+      <div id="s2-layout-bar">
+        <span class="layout-label">Layout:</span>
+        <select class="dropdown" id="s2-layout-select" style="width:160px;" onchange="Layout.onLayoutChange()">
+          <option value="vertical">Dọc (Vertical)</option>
+          <option value="horizontal">Ngang (Horizontal)</option>
+          <option value="table2">Table 2 dòng</option>
+          <option value="table3">Table 3 dòng</option>
+        </select>
+        <div id="s2-dist-wrap" style="display:flex; align-items:center; gap:6px;"></div>
+        <div class="pct-inputs" id="s2-pct-inputs"></div>
+      </div>
+
+      <!-- Preview pane (hidden by default, shown when Preview active) -->
+      <div id="s2-preview-pane" style="display:none; flex:1; flex-direction:column; overflow:hidden;">
+        <!-- Preview header bar -->
+        <div id="s2-preview-header">
+          <span id="s2-preview-title">👁 Preview — Thiết kế realtime</span>
+          <span id="s2-preview-status">Theme: —</span>
+          <button class="btn btn-ghost btn-sm s2-preview-toggle-btn" onclick="if(typeof Preview!=='undefined')Preview.close()" style="margin-left:auto;">✕ Đóng Preview</button>
+        </div>
+        <!-- 16:9 Canvas -->
+        <div id="s2-preview-canvas-wrap">
+          <canvas id="s2-preview-canvas" width="960" height="540"></canvas>
+        </div>
+        <!-- Status footer -->
+        <div id="s2-preview-footer">
+          <span style="font-size:10px; color:var(--txt-dim);">● Realtime — thay đổi Theme hoặc Advanced sẽ cập nhật ngay</span>
+          <span style="font-size:10px; color:var(--txt-dim); margin-left:auto;">Đây là slide mẫu minh họa — PPTX thực tế sẽ dùng nội dung thật</span>
+        </div>
+      </div>
+
+      <!-- Canvas -->
+      <div id="s2-canvas-wrap">
+        <div id="s2-canvas">
+          <div id="s2-canvas-empty">
+            <span style="font-size:32px;">🖼</span>
+            <span style="font-size:12px;">Chọn một slide để xem layout</span>
+          </div>
+        </div>
+      </div>
+      
+      <!-- AI Image Generator -->
+      <div id="s2-ai-gen" class="disabled" style="margin-top:12px; padding:12px; border:1px solid var(--border); border-radius:8px; background:var(--bg-card); display:flex; gap:8px; align-items:center; opacity:0.5; pointer-events:none; transition:0.3s;">
+        <span style="font-size:16px;">✨</span>
+        <input type="text" id="s2-ai-prompt" placeholder="Chọn một ảnh ở trên, nhập yêu cầu và nhấn Enter..." style="flex:1; padding:6px 12px; border:1px solid var(--border); border-radius:4px; font-size:12px; background:var(--bg-main); color:var(--txt);">
+        <button class="btn btn-primary btn-sm" id="s2-ai-btn" onclick="if(typeof Step2Design !== 'undefined') Step2Design.generateAIImage()" style="padding:6px 12px;">Tạo ảnh</button>
+      </div>
+
+    </div><!-- /panel-right -->
+
+  </div><!-- /split-body -->
+</div><!-- /page-step2 -->
+
+
+<!-- ═══════════════ POPUP: Trigger Guide ═══════════════ -->
+<div class="popup-overlay" id="popup-trigger-guide">
+  <div class="popup-box">
+    <button class="popup-close" onclick="Step1.closeTriggerGuide()">✕</button>
+    <div style="font-size:16px; font-weight:800; color:var(--txt); margin-bottom:16px;">
+      📋 Cấu trúc File Trigger
+    </div>
+    <div id="popup-trigger-content"></div>
+  </div>
+</div>
+
+<!-- ═══════════════ PROGRESS OVERLAY ═══════════════ -->
+<div id="progress-overlay">
+  <div style="font-size:40px;">⚡</div>
+  <div class="prog-title">Đang tạo PPTX...</div>
+  <div class="prog-msg" id="prog-msg">Đang khởi động</div>
+  <div class="prog-bar-track">
+    <div class="prog-bar-fill" id="prog-bar" style="width:0%"></div>
+  </div>
+  <div style="font-size:11px; color:var(--txt-dim);" id="prog-detail"></div>
+</div>
+
+<!-- ═══════════════ DEBUG PANEL ═══════════════ -->
+<div id="debug-panel" style="display:none; position:fixed; bottom:0; left:0; right:0;
+     background:#1a0a0a; border-top:2px solid #ef4444; padding:8px 16px;
+     font-family:monospace; font-size:11px; color:#f87171; z-index:99999;
+     max-height:120px; overflow-y:auto;">
+  <strong style="color:#ef4444;">JS Errors:</strong>
+  <div id="debug-log"></div>
+</div>
+<script>
+  window.onerror = function(msg, src, line, col, err) {
+    var p = document.getElementById('debug-panel');
+    var l = document.getElementById('debug-log');
+    if (p && l) {
+      p.style.display = 'block';
+      l.innerHTML += '<div>[' + (src||'').split('/').pop() + ':' + line + '] ' + msg + '</div>';
+    }
+  };
+  document.addEventListener('DOMContentLoaded', function() {
+    setTimeout(function() {
+      var status = typeof Step2DesignPanel !== 'undefined' ? '✅ OK' : '❌ NOT LOADED';
+      console.log('[DIAGNOSTIC] Step2DesignPanel:', status);
+      if (typeof Step2DesignPanel === 'undefined') {
+        var p = document.getElementById('debug-panel');
+        var l = document.getElementById('debug-log');
+        if (p && l) {
+          p.style.display = 'block';
+          l.innerHTML += '<div>❌ step2_design_panel.js FAILED TO LOAD</div>';
+        }
+      }
+    }, 500);
+  });
+</script>
+
+<!-- ═══════════════ TOAST ═══════════════ -->
+<div id="toast">
+  <span id="toast-icon">✓</span>
+  <span id="toast-msg">Thông báo</span>
+</div>
+
+<!-- JS MODULES loaded by app.py -->
+</body>
+</html>

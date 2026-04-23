@@ -1,0 +1,194 @@
+{
+  "_comment": "Design template — chỉnh file này để thay đổi toàn bộ giao diện PPTX. Không cần sửa code.",
+  "brand": {
+    "company_name": "INTERSNACK",
+    "logo_path": ""
+  },
+  "colors": {
+    "bg_dark": "#6c1bb5",
+    "bg_light": "#0d0021",
+    "accent": "#00e5ff",
+    "heading": "#6c1bb5",
+    "body": "#ffffff",
+    "bullet_dot": "#00e5ff",
+    "table_header": "#6c1bb5",
+    "table_row_alt": "#0d0021",
+    "insight_bg": "#0d0021",
+    "insight_border": "#e040fb",
+    "insight_label": "#00e5ff",
+    "insight_body": "#ffffff",
+    "divider_line": "#e040fb",
+    "img_placeholder_fill": "#0d0021",
+    "img_placeholder_border": "#e040fb",
+    "chart_palette": [
+      "#6c1bb5",
+      "#e040fb",
+      "#00e5ff",
+      "#ffffff",
+      "#888888"
+    ],
+    "title_text": "#003366",
+    "accent_1": "#003366",
+    "subtitle_text": "#0055aa",
+    "accent_2": "#0055aa",
+    "chart_accent": "#f4a020",
+    "highlight": "#f4a020",
+    "slide_background": "#ffffff",
+    "panel_bg": "#ffffff",
+    "body_text": "#1a1a2e",
+    "table_text": "#1a1a2e"
+  },
+  "fonts": {
+    "main": "Trebuchet MS",
+    "heading": "Trebuchet MS",
+    "title_slide_size": 36,
+    "subtitle_size": 18,
+    "header_band_size": 28,
+    "bullet_size": 15,
+    "insight_label_size": 13,
+    "insight_body_size": 13,
+    "table_header_size": 12,
+    "table_body_size": 11,
+    "img_placeholder_size": 11
+  },
+  "slide": {
+    "width_inches": 13.33,
+    "height_inches": 7.5,
+    "margin_left_inches": 0.45,
+    "margin_right_inches": 0.45
+  },
+  "title_slide": {
+    "enabled": true,
+    "_comment_enabled": "false = bỏ qua cover slide hoàn toàn",
+    "bg": {
+      "enabled": true,
+      "_comment_enabled": "false = không vẽ bg (dùng template bg)",
+      "color": "#6c1bb5"
+    },
+    "accent_bar": {
+      "enabled": false,
+      "width_inches": 0.18,
+      "color": "#00e5ff"
+    },
+    "title": {
+      "y_inches": 2.2,
+      "height_inches": 2.0,
+      "font_size": 40,
+      "color": "#FFFFFF",
+      "align": "center",
+      "_comment_align": "left | center | right"
+    },
+    "subtitle": {
+      "enabled": false,
+      "y_inches": 4.5,
+      "height_inches": 1.0,
+      "font_size": 18,
+      "color": "accent",
+      "align": "center"
+    }
+  },
+  "header_band": {
+    "enabled": true,
+    "_comment_enabled": "false = không vẽ header band (dùng placeholder của template)",
+    "height_inches": 1.15,
+    "color": "#6c1bb5",
+    "title_y_inches": 0.16,
+    "title_height_inches": 0.85,
+    "title_x_inches": 0.45,
+    "title_width_inches": 12.4,
+    "text_color": "#FFFFFF",
+    "auto_text_color": true
+  },
+  "content_slide": {
+    "bg": {
+      "enabled": true,
+      "_comment_enabled": "false = không vẽ bg (dùng template bg)",
+      "color": "#0d0021"
+    },
+    "content_top_inches": 1.25,
+    "content_bottom_margin_inches": 0.35
+  },
+  "divider": {
+    "enabled": true,
+    "_comment_enabled": "false = ẩn đường kẻ dọc giữa left/right",
+    "color": "#e040fb",
+    "width_inches": 0.04
+  },
+  "split_layout": {
+    "split_ratio": 0.6,
+    "_comment_split_ratio": "0.0–1.0, left panel chiếm bao nhiêu % chiều ngang"
+  },
+  "stacked_layout": {
+    "chart_height_ratio": 0.58,
+    "table_height_ratio": 0.38,
+    "gap_ratio": 0.04
+  },
+  "right_panel": {
+    "enabled": true,
+    "_comment_enabled": "false = ẩn toàn bộ right panel (AI Insight)",
+    "bg_color": "#0d0021",
+    "border_color": "insight_border",
+    "padding_inches": 0.15,
+    "label": {
+      "enabled": true,
+      "text": "AI Insight",
+      "font_size": 13,
+      "color": "insight_label"
+    },
+    "label_divider": {
+      "enabled": true,
+      "color": "divider_line"
+    },
+    "body": {
+      "font_size": 13,
+      "color": "#ffffff"
+    }
+  },
+  "bullet_slide": {
+    "bullet_dot_char": "●",
+    "_comment_bullet_dot_char": "Ký tự bullet, ví dụ: ● ▸ – •",
+    "bullet_size": 15,
+    "bullet_dot_color": "#00e5ff",
+    "body_color": "#ffffff",
+    "line_spacing_pt": 700,
+    "_comment_line_spacing_pt": "Khoảng cách dòng tính bằng hundredths of a point (700 = 7pt)",
+    "footer_insight": {
+      "enabled": true,
+      "_comment_enabled": "false = ẩn dòng insight ở cuối bullet slide",
+      "font_size": 11,
+      "color": "#555555"
+    }
+  },
+  "table": {
+    "header": {
+      "font_size": 12,
+      "color": "#FFFFFF",
+      "bg_color": "table_header"
+    },
+    "body": {
+      "font_size": 11,
+      "alt_row_color": "table_row_alt"
+    }
+  },
+  "chart": {
+    "has_legend": true,
+    "_comment_has_legend": "true/false — hiện legend không",
+    "show_data_labels": true
+  },
+  "image_placeholder": {
+    "count": 3,
+    "_comment_count": "Số ô placeholder khi slide không có data bảng",
+    "fill_color": "img_placeholder_fill",
+    "border_color": "img_placeholder_border",
+    "label_font_size": 11,
+    "label_color": "#5555AA"
+  },
+  "transparency": {
+    "header_band_alpha": 0,
+    "bg_alpha": 0
+  },
+  "meta": {
+    "theme": "bold",
+    "updated_at": "2026-04-23T02:53:25.052575"
+  }
+}
