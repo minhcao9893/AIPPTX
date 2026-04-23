@@ -29,9 +29,17 @@ from .modules.routes_design import bp_design
 # ── Paths ─────────────────────────────────────────────────────────────────────
 ROOT_DIR      = Path(__file__).resolve().parents[1]
 APP_DIR       = Path(__file__).resolve().parent
-INPUT_DIR     = ROOT_DIR / "input"
-OUTPUT_DIR    = ROOT_DIR / "output"
-TEMPLATE_DIR  = ROOT_DIR / "template"
+
+# If running on Render with persistent disk, use it. Otherwise use local dirs.
+if os.environ.get("RENDER"):
+    PERSISTENT_DIR = Path("/app/persistent")
+    INPUT_DIR      = PERSISTENT_DIR / "input"
+    OUTPUT_DIR     = PERSISTENT_DIR / "output"
+    TEMPLATE_DIR   = PERSISTENT_DIR / "template"
+else:
+    INPUT_DIR      = ROOT_DIR / "input"
+    OUTPUT_DIR     = ROOT_DIR / "output"
+    TEMPLATE_DIR   = ROOT_DIR / "template"
 DESIGN_FILE   = APP_DIR / "design_template.json"
 CONFIG_FILE   = APP_DIR / "config.json"
 
@@ -649,5 +657,11 @@ if __name__ == "__main__":
     print("   Mở trình duyệt: http://localhost:5000")
 
     threading.Thread(target=_run_stage1_if_enabled, daemon=True).start()
-    threading.Thread(target=_open_browser, daemon=True).start()
-    app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 5000)), debug=False)
+    
+    # Only open browser if not in production (Render sets RENDER env var)
+    if not os.environ.get("RENDER"):
+        threading.Thread(target=_open_browser, daemon=True).start()
+    
+    port = int(os.environ.get("PORT", 5000))
+    host = "0.0.0.0"  # Render needs this
+    app.run(host=host, port=port, debug=False)

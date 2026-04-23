@@ -7,3 +7,17 @@ services:
     envVars:
       - key: PORT
         value: 10000
+      # GitHub API keys (set in Render dashboard)
+      - key: GITHUB_OWNER
+        value: minhcao9893
+      - key: GITHUB_KEY_REPO
+        value: tmdl-keys
+      - key: GITHUB_KEYS_PATH
+        value: keys.txt
+      # GITHUB_PAT is set in Render dashboard (sensitive)
+      # GROQ_API_KEY is set in Render dashboard (fallback)
+    # Persistent disk for input/ and output/
+    disk:
+      name: pptx-files
+      mountPath: /app/persistent
+      sizeGB: 10
