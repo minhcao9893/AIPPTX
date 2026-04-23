@@ -583,6 +583,18 @@ def _run_pipeline(job_id: str, docx_path: str, source_filename: str,
         n_slides  = len(raw_data.get("slides", []))
         _update(job_id, f"✅ Đọc xong — {n_slides} slides")
 
+        # Stage 1: Auto-update whitelist/blacklist
+        # Chạy ngay sau parse, trước sanitize. Nếu fail thì skip, không crash pipeline.
+        _update(job_id, "🧠 Stage 1: Cập nhật whitelist/blacklist...")
+        try:
+            from .stage1_list_updater import run_stage1_update
+            n_w, n_b = run_stage1_update(raw_data, dry_run=False, verbose=False)
+            _update(job_id, f"✅ Stage 1: +{n_w} whitelist, +{n_b} blacklist")
+        except Exception as _s1_err:
+            import sys as _sys
+            print(f"⚠️ Stage 1 failed (continuing): {_s1_err}", file=_sys.stderr)
+            _update(job_id, "⚠️ Stage 1 skipped (tiếp tục pipeline...)")
+
         # Step 2: Sanitize
         _update(job_id, "🔒 Đang mã hóa dữ liệu nhạy cảm...")
         from .sanitizer import sanitize, build_skeleton_metadata
@@ -661,8 +673,9 @@ if __name__ == "__main__":
     print(f"   Template      : {DEFAULT_TEMPLATE}")
     print("   Mở trình duyệt: http://localhost:5000")
 
-    threading.Thread(target=_run_stage1_if_enabled, daemon=True).start()
-    
+    # Stage 1 now runs inside _run_pipeline (after file pick), not at startup
+    # threading.Thread(target=_run_stage1_if_enabled, daemon=True).start()
+
     # Only open browser if not in production (Render sets RENDER env var)
     if not os.environ.get("RENDER"):
         threading.Thread(target=_open_browser, daemon=True).start()

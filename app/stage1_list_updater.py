@@ -1,12 +1,17 @@
 """
-stage1_list_updater.py — Stage 1
-================================
+stage1_list_updater.py — Stage 1: Whitelist/Blacklist Auto-Update
+==================================================================
 Goal:
-  - Read all .docx in input/
-  - Extract a privacy-minimized text (remove numbers + "insight-y" keywords)
-  - Send that text + current whitelist/blacklist to AI
+  - Extract privacy-minimized text from data (remove numbers + insight words)
+  - Send text + current whitelist/blacklist to AI via Groq
   - AI suggests updates to whitelist/blacklist
   - Save back to GitHub private repo (or local cache)
+
+Features:
+  ✅ Auto-rotate keys when hitting API restrictions (400, 401, 429, etc.)
+  ✅ Graceful degradation (skip Stage 1 if all keys fail)
+  ✅ Designed to run DURING pipeline (after docx parse, before sanitize)
+  ✅ Integrated into main flow, not background startup
 """
 
 from __future__ import annotations
@@ -14,20 +19,29 @@ from __future__ import annotations
 import json
 import os
 import re
+import sys
 import time
 from pathlib import Path
-from typing import Dict, List, Tuple
+from typing import Dict, List, Tuple, Optional
 
 from groq import Groq
 
 from .key_pool import get_key_pool
 from .list_store import load_lists, save_lists
-from .docx_parser import docx_to_input_json
 
 
 BASE_DIR = Path(__file__).parent
-INPUT_DIR = BASE_DIR.parent / "input"
 CONFIG_FILE = BASE_DIR / "config.json"
+
+
+class Stage1Error(Exception):
+    pass
+
+class Stage1ApiError(Stage1Error):
+    pass
+
+class Stage1ConfigError(Stage1Error):
+    pass
 
 
 def _load_config() -> dict:
@@ -60,37 +74,40 @@ def _minimize_text(s: str) -> str:
     return s
 
 
-def _collect_input_text() -> str:
-    INPUT_DIR.mkdir(exist_ok=True)
+def _extract_text_from_data(raw_data: dict) -> str:
+    """
+    Extract minimized text from raw_data dict (already parsed from DOCX).
+    Chạy NGAY SAU parse, không cần scan folder.
+    """
     parts: List[str] = []
-    for docx in sorted(INPUT_DIR.glob("*.docx")):
-        try:
-            data = docx_to_input_json(str(docx))
-        except Exception:
-            continue
-        parts.append(f"[FILE] {docx.name}")
-        parts.append(_minimize_text(str(data.get("presentation_title", ""))))
-        for slide in data.get("slides", []):
-            parts.append(_minimize_text(str(slide.get("title", ""))))
-            c = slide.get("content")
-            if isinstance(c, str):
-                parts.append(_minimize_text(c))
-            elif isinstance(c, list):
-                for it in c:
-                    parts.append(_minimize_text(str(it)))
-            elif isinstance(c, dict):
-                # tables: keep only column names + string-ish cells (numbers already stripped)
-                cols = c.get("columns", [])
-                parts.append(_minimize_text(" ".join(str(x) for x in cols)))
-                for row in c.get("rows", [])[:10]:
-                    if not isinstance(row, list):
+
+    title = raw_data.get("presentation_title", "")
+    if title:
+        parts.append(_minimize_text(str(title)))
+
+    for slide in raw_data.get("slides", []):
+        slide_title = slide.get("title", "")
+        if slide_title:
+            parts.append(_minimize_text(str(slide_title)))
+
+        c = slide.get("content")
+        if isinstance(c, str):
+            parts.append(_minimize_text(c))
+        elif isinstance(c, list):
+            for it in c:
+                parts.append(_minimize_text(str(it)))
+        elif isinstance(c, dict):
+            cols = c.get("columns", [])
+            parts.append(_minimize_text(" ".join(str(x) for x in cols)))
+            for row in c.get("rows", [])[:10]:
+                if not isinstance(row, list):
+                    continue
+                for cell in row:
+                    if isinstance(cell, (int, float)):
                         continue
-                    for cell in row:
-                        if isinstance(cell, (int, float)):
-                            continue
-                        parts.append(_minimize_text(str(cell)))
+                    parts.append(_minimize_text(str(cell)))
+
     text = "\n".join(p for p in parts if p)
-    # hard cap to avoid giant prompts
     return text[:18_000]
 
 
@@ -122,13 +139,43 @@ Rules:
 """.strip()
 
 
-def _call_groq_json(user_prompt: str, *, model: str, max_retries: int = 3) -> Dict:
-    pool = get_key_pool()
-    last_err: Exception | None = None
+def _is_retryable_error(error: Exception) -> bool:
+    """Retryable: rate limit, org restricted, timeout. Non-retryable: auth fail, format error."""
+    err_str = str(error).lower()
+    non_retryable = ["invalid request error", "model not found", "authentication failed", "not authorized"]
+    for p in non_retryable:
+        if p in err_str:
+            return False
+    retryable = ["429", "rate limit", "organization_restricted", "organization has been restricted",
+                 "restricted", "503", "timeout", "connection reset"]
+    for p in retryable:
+        if p in err_str:
+            return True
+    return False
+
+
+def _call_groq_json(
+    user_prompt: str,
+    *,
+    model: str,
+    max_retries: int = 3
+) -> Optional[Dict]:
+    """
+    Call Groq API với auto key rotation khi bị restrict/rate limit.
+    Returns Dict nếu thành công, None nếu tất cả keys fail.
+    Raises Stage1ApiError nếu lỗi non-retryable.
+    """
+    pool = get_key_pool(force_reload=True)
+
+    if len(pool) == 0:
+        raise Stage1ConfigError("No API keys available (check config.json or keys.txt)")
+
+    last_retryable_err: Optional[Exception] = None
+
     for attempt in range(max_retries):
-        key = pool.next_key() if len(pool) else None
-        client = Groq(api_key=key) if key else Groq()
+        key = pool.next_key()
         try:
+            client = Groq(api_key=key)
             resp = client.chat.completions.create(
                 model=model,
                 max_tokens=1200,
@@ -141,58 +188,93 @@ def _call_groq_json(user_prompt: str, *, model: str, max_retries: int = 3) -> Di
             text = resp.choices[0].message.content or ""
             text = re.sub(r"```(?:json)?|```", "", text).strip()
             return json.loads(text)
+
         except Exception as e:
-            last_err = e
-            msg = str(e).lower()
-            if "429" in msg or "rate limit" in msg:
-                time.sleep(1.5 + 0.75 * attempt)
+            if _is_retryable_error(e):
+                last_retryable_err = e
+                print(f"  ⚠️ Stage 1 key bị restrict, rotating... ({str(e)[:80]})", file=sys.stderr)
+                time.sleep(1.0 + 0.5 * attempt)
                 continue
-            raise
-    assert last_err is not None
-    raise last_err
+            else:
+                raise Stage1ApiError(f"Non-retryable API error: {e}") from e
+
+    # Tất cả keys fail
+    print(f"  ⚠️ Stage 1 skipped: All keys exhausted", file=sys.stderr)
+    return None
 
 
-def run_stage1_update(*, dry_run: bool = False) -> Tuple[int, int]:
+def run_stage1_update(
+    raw_data: dict,
+    *,
+    dry_run: bool = False,
+    verbose: bool = True
+) -> Tuple[int, int]:
     """
-    Returns (n_added_whitelist, n_added_blacklist)
+    Chạy Stage 1 update trên raw_data đã parse từ DOCX.
+    Returns (n_added_whitelist, n_added_blacklist).
+    Nếu tất cả keys fail → return (0, 0) không crash pipeline.
     """
-    text = _collect_input_text()
-    if not text.strip():
-        return 0, 0
+    try:
+        text = _extract_text_from_data(raw_data)
+        if not text.strip():
+            if verbose:
+                print("🧠 Stage 1: No text to analyze, skipping", file=sys.stderr)
+            return 0, 0
 
-    whitelist, blacklist = load_lists()
-    cfg = _load_config()
-    model = cfg.get("stage1_model") or cfg.get("model") or "llama-3.3-70b-versatile"
+        whitelist, blacklist = load_lists()
+        cfg = _load_config()
+        model = cfg.get("stage1_model") or cfg.get("model") or "llama-3.3-70b-versatile"
 
-    prompt = json.dumps(
-        {
-            "whitelist": whitelist[:800],
-            "blacklist": blacklist[:800],
-            "text": text,
-        },
-        ensure_ascii=False,
-        indent=2,
-    )
+        prompt = json.dumps(
+            {
+                "whitelist": whitelist[:800],
+                "blacklist": blacklist[:800],
+                "text": text,
+            },
+            ensure_ascii=False,
+            indent=2,
+        )
 
-    out = _call_groq_json(prompt, model=model)
-    add_w = [str(x).strip() for x in out.get("add_whitelist", []) if str(x).strip()]
-    add_b = [str(x).strip() for x in out.get("add_blacklist", []) if str(x).strip()]
+        out = _call_groq_json(prompt, model=model)
 
-    def merge(base: List[str], add: List[str]) -> List[str]:
-        seen = set(base)
-        merged = list(base)
-        for x in add:
-            if x in seen:
-                continue
-            seen.add(x)
-            merged.append(x)
-        return merged
+        if out is None:
+            # Tất cả keys fail với retryable error → graceful skip
+            return 0, 0
 
-    new_w = merge(whitelist, add_w)
-    new_b = merge(blacklist, add_b)
-    n_w = len(new_w) - len(whitelist)
-    n_b = len(new_b) - len(blacklist)
+        add_w = [str(x).strip() for x in out.get("add_whitelist", []) if str(x).strip()]
+        add_b = [str(x).strip() for x in out.get("add_blacklist", []) if str(x).strip()]
 
-    if (n_w or n_b) and not dry_run:
-        save_lists(new_w, new_b, message=f"AI update whitelist/blacklist ({n_w}W/{n_b}B)")
-    return n_w, n_b
+        def merge(base: List[str], add: List[str]) -> List[str]:
+            seen = set(base)
+            merged = list(base)
+            for x in add:
+                if x in seen:
+                    continue
+                seen.add(x)
+                merged.append(x)
+            return merged
+
+        new_w = merge(whitelist, add_w)
+        new_b = merge(blacklist, add_b)
+        n_w = len(new_w) - len(whitelist)
+        n_b = len(new_b) - len(blacklist)
+
+        if (n_w or n_b) and not dry_run:
+            save_lists(new_w, new_b, message=f"AI update whitelist/blacklist ({n_w}W/{n_b}B)")
+
+        return n_w, n_b
+
+    except Stage1ConfigError as e:
+        if verbose:
+            print(f"❌ Stage 1 config error: {e}", file=sys.stderr)
+        raise
+
+    except Stage1ApiError as e:
+        if verbose:
+            print(f"❌ Stage 1 API error: {e}", file=sys.stderr)
+        raise
+
+    except Exception as e:
+        if verbose:
+            print(f"❌ Stage 1 unexpected error: {e}", file=sys.stderr)
+        raise Stage1Error(f"Unexpected: {e}") from e
