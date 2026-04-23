@@ -1,0 +1,40 @@
+{
+  "model": "llama-3.3-70b-versatile",
+  "output_path": "output.pptx",
+  "groq_keys_file": "keys.txt",
+  "enable_stage1": true,
+  "stage1_model": "llama-3.3-70b-versatile",
+  "github_lists": {
+    "_note": "Repo chứa whitelist.json & blacklist.json. Khuyên dùng env var GITHUB_PAT thay vì lưu PAT ở đây.",
+    "owner": "minhcao9893",
+    "repo": "tmdl-keys",
+    "whitelist_path": "whitelist.json",
+    "blacklist_path": "blacklist.json"
+  },
+  "github_keys": {
+    "_note": "Optional (private repo). Prefer env vars: GITHUB_PAT/GITHUB_OWNER/GITHUB_KEY_REPO/GITHUB_KEYS_PATH",
+    "owner": "minhcao9893",
+    "repo": "tmdl-keys",
+    "path": "keys.txt"
+  },
+  "sanitize_rules": {
+    "always_mask_keys": [
+      "company",
+      "department",
+      "dept",
+      "name",
+      "author",
+      "email",
+      "phone",
+      "employee",
+      "division",
+      "unit",
+      "product",
+      "client",
+      "customer",
+      "vendor",
+      "supplier"
+    ]
+  },
+  "_note": "API key is read from GROQ_API_KEY env var, or from a rotated pool via keys.txt."
+}

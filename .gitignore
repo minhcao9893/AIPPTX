@@ -1,9 +1,9 @@
 # Local secrets / config
 Node/
 GitPortable/
-config.json
 keys.txt
 *.env
+.env.local
 
 # Generated intermediate artifacts
 ai_debug.log

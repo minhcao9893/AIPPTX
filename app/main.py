@@ -19,6 +19,11 @@ import argparse
 import json
 import sys
 import os
+from pathlib import Path
+from dotenv import load_dotenv
+
+# Load .env.local tu thu muc goc project (chi co tac dung khi chay local)
+load_dotenv(Path(__file__).parent.parent / ".env.local")
 
 
 def load_json(path: str) -> dict:
@@ -47,9 +52,9 @@ def main():
                         help="Skip sanitize+plan, build from existing JSON files")
     args = parser.parse_args()
 
-    # ── Step 1: Sanitize ───────────────────────────────────────────────────
+    # -- Step 1: Sanitize ---------------------------------------------------
     if not args.only_build:
-        print("🔒 Step 1: Sanitizing data…")
+        print("Step 1: Sanitizing data...")
         from .sanitizer import sanitize, build_skeleton_metadata
 
         raw_data = load_json(args.input)
@@ -58,43 +63,40 @@ def main():
 
         save_json(skeleton,   "skeleton.json")
         save_json(name_map,   "name_map.json")
-        print(f"   ✅ {len(name_map)} names masked → skeleton.json saved")
+        print(f"   {len(name_map)} names masked -> skeleton.json saved")
         if name_map:
             for alias, original in name_map.items():
-                print(f"      {alias:20s} → {original}")
-        print(f"   ⚠️  name_map.json PRIVATE — never share")
-        mask_map = name_map  # alias for builder compatibility
+                print(f"      {alias:20s} -> {original}")
+        print(f"   name_map.json PRIVATE -- never share")
+        mask_map = name_map
 
         if args.only_sanitize:
             print("\nDone (sanitize only).")
             return
 
-        # ── Step 2: AI Layout Planning ─────────────────────────────────────
-        print("\n📡 Step 2: AI layout planning (skeleton only, no real data)…")
+        # -- Step 2: AI Layout Planning ------------------------------------
+        print("\nStep 2: AI layout planning (skeleton only, no real data)...")
         from .ai_planner import plan_layout
 
         layout_plan = plan_layout(skeleton)
         save_json(layout_plan, "layout_plan.json")
         n = len(layout_plan.get("slides", []))
-        print(f"   ✅ {n} slide layout(s) planned → layout_plan.json saved")
+        print(f"   {n} slide layout(s) planned -> layout_plan.json saved")
 
     else:
-        # Load intermediate files from previous run
-        print("⚡ --only-build: loading existing skeleton/mask/plan files…")
+        print("--only-build: loading existing skeleton/mask/plan files...")
         if not all(os.path.exists(f) for f in
                    ["skeleton.json", "mask_map.json", "layout_plan.json"]):
-            print("❌ Missing one of: skeleton.json, mask_map.json, layout_plan.json")
-            print("   Run without --only-build first to generate these files.")
+            print("Missing one of: skeleton.json, mask_map.json, layout_plan.json")
             sys.exit(1)
 
         raw_data    = load_json(args.input)
         mask_map    = load_json("name_map.json") if os.path.exists("name_map.json") else \
                       load_json("mask_map.json") if os.path.exists("mask_map.json") else {}
-        scale_map   = {}
         layout_plan = load_json("layout_plan.json")
 
-    # ── Step 3: Build PPTX ────────────────────────────────────────────────
-    print("\n🎨 Step 3: Building PPTX (data unmasked locally)…")
+    # -- Step 3: Build PPTX ------------------------------------------------
+    print("\nStep 3: Building PPTX (data unmasked locally)...")
     from .builder import build
 
     build(layout_plan, mask_map, raw_data,

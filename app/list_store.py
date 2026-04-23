@@ -37,7 +37,8 @@ def load_lists_config_from_env() -> ListsConfig | None:
     owner = _env("GITHUB_OWNER")
     repo = _env("GITHUB_LISTS_REPO")
     if not (pat and owner and repo):
-        return None
+        # Fallback to config.json nếu env var không đủ
+        return load_lists_config_from_config()
     return ListsConfig(
         pat=pat,
         owner=owner,

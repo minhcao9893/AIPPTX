@@ -4,3 +4,4 @@ flask
 lxml
 python-docx
 openpyxl
+python-dotenv

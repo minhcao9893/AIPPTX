@@ -18,6 +18,11 @@ import json
 import threading
 import webbrowser
 from pathlib import Path
+from dotenv import load_dotenv
+
+# Load .env.local từ thư mục gốc project (nếu có) — chỉ có tác dụng khi chạy local
+_ROOT = Path(__file__).parent.parent
+load_dotenv(_ROOT / ".env.local")
 from datetime import datetime
 
 from flask import Flask, render_template_string, jsonify, request, send_file
