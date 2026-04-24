@@ -51,9 +51,9 @@ CONFIG_FILE   = APP_DIR / "config.json"
 # Default template (auto-used if user doesn't pick one)
 DEFAULT_TEMPLATE = TEMPLATE_DIR / "template.pptx"
 
-INPUT_DIR.mkdir(exist_ok=True)
-OUTPUT_DIR.mkdir(exist_ok=True)
-TEMPLATE_DIR.mkdir(exist_ok=True)
+INPUT_DIR.mkdir(parents=True, exist_ok=True)
+OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
+TEMPLATE_DIR.mkdir(parents=True, exist_ok=True)
 
 app = Flask(__name__, static_folder=None)
 _progress = {"status": "idle", "message": "", "file": ""}
