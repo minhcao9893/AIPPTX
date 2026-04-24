@@ -21,13 +21,27 @@ const Step2 = (() => {
 
     // 2. Parse slides
     try {
-      const res  = await fetch('/api/parse-slides', {
-        method:  'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body:    JSON.stringify({ text })
-      });
-      const data = await res.json();
+      const [res, resFull] = await Promise.all([
+        fetch('/api/parse-slides', {
+          method:  'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body:    JSON.stringify({ text })
+        }),
+        fetch('/api/parse-slides-full', {
+          method:  'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body:    JSON.stringify({ text })
+        })
+      ]);
+      const data     = await res.json();
+      const dataFull = await resFull.json();
       console.log('[Step2] parse-slides kết quả:', data);
+
+      // Lưu full slide data vào window để Preview dùng
+      if (dataFull.ok && dataFull.slides) {
+        window._slideFullData = {};
+        dataFull.slides.forEach(s => { window._slideFullData[s.index] = s; });
+      }
 
       if (!data.ok || !data.slides || data.slides.length === 0) {
         toast('Không parse được slide nào. Kiểm tra cấu trúc file.', 'error');

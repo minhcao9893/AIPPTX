@@ -94,9 +94,9 @@ const Step1 = (() => {
   }
 
   /**
-   * Chạy AI analysis cho mode 2
-   * Luồng: file → /api/ai-split-docx → text có trigger → Step1Preview.load()
-   * (Logic mask/unmask xử lý bên Python server)
+   * Chạy AI analysis cho mode 2 — luồng 2-lượt:
+   *   Lượt 1: Stage 1 extract blacklist/whitelist (AI 1)
+   *   Lượt 2: Mask text gốc → AI soạn cấu trúc slide (AI 2)
    */
   async function runAIAnalysis() {
     if (!_file2) { toast('Vui lòng chọn file trước', 'error'); return; }
@@ -114,10 +114,19 @@ const Step1 = (() => {
     fd.append('max_slides', maxSlides);
     fd.append('lang', lang);
 
-    // Progress messages (cosmetic)
-    const steps = ['Đang mask dữ liệu nhạy cảm...', 'AI đang phân tích cấu trúc...', 'Unmask và build trigger...'];
+    // Progress messages theo đúng 2 lượt thực tế
+    const progressSteps = [
+      'Đang đọc và phân tích văn bản...',
+      'Lượt 1 — AI nhận diện từ nhạy cảm...',
+      'Lượt 1 — Cập nhật blacklist / whitelist...',
+      'Lượt 2 — Mask dữ liệu nhạy cảm...',
+      'Lượt 2 — AI soạn cấu trúc slide...',
+      'Hoàn tất — Unmask và xây trigger...',
+    ];
     let si = 0;
-    const ticker = setInterval(() => { msgEl.textContent = steps[si++ % steps.length]; }, 2000);
+    const ticker = setInterval(() => {
+      msgEl.textContent = progressSteps[Math.min(si++, progressSteps.length - 1)];
+    }, 2500);
 
     try {
       const res  = await fetch('/api/ai-split-docx', { method: 'POST', body: fd });
@@ -125,13 +134,21 @@ const Step1 = (() => {
       clearInterval(ticker);
       if (!data.ok) throw new Error(data.error || 'AI error');
 
-      _parsedText = data.text;
+      _parsedText = data.trigger_text || data.text || '';
       _slideCount = data.slide_count || 0;
-      Step1Preview.load(data.text, 'ai', {
+
+      // Thông báo Stage 1 kết quả nếu có
+      const s1w = data.stage1_added_w || 0;
+      const s1b = data.stage1_added_b || 0;
+      const s1msg = (s1w || s1b)
+        ? ` (+${s1b} blacklist, +${s1w} whitelist)`
+        : '';
+
+      Step1Preview.load(_parsedText, 'ai', {
         slideCount: _slideCount,
         fileName: _file2.name
       });
-      toast(`✓ AI đã phân tích xong: ${_slideCount} slide`, 'success');
+      toast(`✓ AI đã phân tích xong: ${_slideCount} slide${s1msg}`, 'success');
     } catch (e) {
       clearInterval(ticker);
       toast('AI lỗi: ' + e.message, 'error');

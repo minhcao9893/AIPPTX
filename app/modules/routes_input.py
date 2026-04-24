@@ -5,7 +5,8 @@ API endpoints:
   POST /api/parse-docx-text   → Extract text từ Word (mode 1 preview)
   POST /api/save-edited-text  → Lưu text đã chỉnh sửa vào session
   POST /api/ai-split-docx     → Mode 2: Word dài → AI → trigger text
-  POST /api/parse-slides      → Parse trigger text → danh sách slide objects
+  POST /api/parse-slides      → Parse trigger text → metadata (title, table_count, ...)
+  POST /api/parse-slides-full → Parse trigger text → full slide objects (content + table)
 """
 
 from flask import Blueprint, request, jsonify
@@ -127,7 +128,9 @@ def ai_split_docx():
         return jsonify({
             'ok': True,
             'trigger_text': trigger_text,
-            'slide_count': slide_count
+            'slide_count': slide_count,
+            'stage1_added_w': result.get('stage1_added_w', 0),
+            'stage1_added_b': result.get('stage1_added_b', 0),
         })
 
     except Exception as e:
@@ -188,6 +191,31 @@ def parse_slides():
                 'image_count': image_count,
                 'images':      images,
             })
+
+        return jsonify({'ok': True, 'slides': slides})
+
+    except Exception as e:
+        return jsonify({'ok': False, 'error': str(e)}), 400
+
+
+@bp_input.route('/api/parse-slides-full', methods=['POST'])
+def parse_slides_full():
+    """
+    Nhận: { text?: str }
+    Trả: { ok, slides: [ slide_object_full ] }  — dùng parse_docx_from_text()
+    Mỗi slide: { index, title, type, content, images, chart_hint, chart_type_hint, raw_text }
+    """
+    try:
+        from .docx_parser_core import parse_docx_from_text
+
+        data = request.get_json() or {}
+        text = data.get('text') or _SESSION_TEXT.get('current', {}).get('text', '')
+
+        if not text:
+            return jsonify({'ok': False, 'error': 'Không có text'}), 400
+
+        result = parse_docx_from_text(text)
+        slides = result if isinstance(result, list) else result.get('slides', [])
 
         return jsonify({'ok': True, 'slides': slides})
 

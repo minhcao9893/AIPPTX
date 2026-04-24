@@ -112,14 +112,28 @@ class KeyPool:
     keys: List[str]
     _idx: int = 0
     _lock: threading.Lock = threading.Lock()
+    _bad: set = None   # keys bị restrict/invalid vĩnh viễn
+
+    def __post_init__(self):
+        self._bad = set()
 
     def next_key(self) -> Optional[str]:
+        """Trả key tiếp theo, bỏ qua các key đã mark_bad."""
         with self._lock:
-            if not self.keys:
+            good = [k for k in self.keys if k not in self._bad]
+            if not good:
                 return None
-            key = self.keys[self._idx % len(self.keys)]
-            self._idx = (self._idx + 1) % len(self.keys)
+            key = good[self._idx % len(good)]
+            self._idx = (self._idx + 1) % len(good)
             return key
+
+    def mark_bad(self, key: str) -> None:
+        """Đánh dấu key bị restrict/invalid — bỏ qua vĩnh viễn trong session."""
+        import sys
+        with self._lock:
+            self._bad.add(key)
+            good_left = len(self.keys) - len(self._bad)
+            print(f'[key_pool] mark_bad: key ***{key[-6:]} bị loại. Còn {good_left}/{len(self.keys)} key.', file=sys.stderr)
 
     def __len__(self) -> int:
         return len(self.keys)

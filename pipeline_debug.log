@@ -291,3 +291,216 @@ Skeleton:
   ]
 }
 ```
+
+============================================================
+[09:52:00] STAGE1 — Text gửi AI (đã minimize)
+============================================================
+Độ dài: 427 chars
+Whitelist hiện tại (0): []
+Blacklist hiện tại (0): []
+--- TEXT ---
+{Title}
+Báo cáo Hiệu suất Kinh doanh Q công ty Pokemon
+Phòng ban Sale báo cáo tình hình kinh doanh và hiệu suất Kinh doanh trong thời gian qua…
+Tổng quan kết quả
+- Doanh thu so với Q
+- Ra mắt sản phẩm mới tại Hà Nội
+- Mở rộng sang thị trường miền Trung Việt Nam
+- Tiết kiệm chi phí logistics
+Doanh thu theo khu vực Q Q
+Khu vực Q Q
+Miền Bắc
+Miền Trung
+Miền Nam
+Doanh thu theo khu vực Q Q
+Khu vực Q Q
+Miền Bắc
+Miền Trung
+Miền Nam
+
+============================================================
+[09:52:07] SANITIZE — Kết quả mask
+============================================================
+Whitelist đang dùng (0): []
+Blacklist đang dùng (0): []
+Các tên đã được mask (6):
+  Company-A → 'Báo cáo Hiệu suất Kinh doanh Q2 2025 công ty'
+  Region-1 → 'Việt Nam'
+  Region-2 → 'Hà Nội'
+  Region-3 → 'Miền Bắc'
+  Region-4 → 'Miền Trung'
+  Region-5 → 'Miền Nam'
+
+============================================================
+[09:52:07] AI PLANNER — SEQUENTIAL PROMPT
+============================================================
+4 slides | keys: 8
+Analyze this presentation skeleton and return layout_plan JSON.
+Each slide has content_summary (structure).
+
+Design constraints: primary=#1a1a1a accent=#ff6b35 font=Arial
+
+
+IMPORTANT: All insight_text and design_notes MUST be written in English.
+
+CHART TYPE GUIDE (when chart_hint=true):
+  pie         → ≤8 rows, 2 cols, share/proportion
+  line        → time-series, trends over periods
+  bar         → single numeric series, ranking/comparison
+  grouped_bar → multiple numeric series, side-by-side
+
+LAYOUT GUIDE:
+  title_only  → cover slide
+  split_left  → left 60%: chart+table | right 40%: insight (DEFAULT for data slides)
+  image_split → left 60%: 3 image placeholders | right 40%: insight (no table data)
+  one_col     → bullet/text only (use sparingly)
+
+Skeleton:
+{
+  "slides": [
+    {
+      "index": 1,
+      "title": "{Title}",
+      "type": "bullet",
+      "chart_hint": false,
+      "chart_type_hint": "none",
+      "content": [
+        "Company-A Pokemon",
+        "Phòng ban Sale báo cáo tình hình kinh doanh và hiệu suất Kinh doanh trong thời gian qua…"
+      ],
+      "images": [],
+      "image_count": 0,
+      "content_summary": "[slide type: bullet] | [2 bullet points] | [bullets_preview: ['Company-A Pokemon', 'Phòng ban Sale báo cáo tình hình kinh doanh và hiệu suất Kinh doanh trong thời g']] | [title: {Title}]"
+    },
+    {
+      "index": 2,
+      "title": "Tổng quan kết quả",
+      "type": "bullet",
+      "chart_hint": false,
+      "chart_type_hint": "none",
+      "content": [
+        "- Doanh thu tăng 25% so với Q1",
+        "- Ra mắt 3 sản phẩm mới tại Region-2",
+        "- Mở rộng sang thị trường miền Trung Region-1",
+        "- Tiết kiệm chi phí logistics 12%"
+      ],
+      "images": [
+        "img_7a42e04c.png"
+      ],
+      "image_count": 1,
+      "content_summary": "[slide type: bullet] | [4 bullet points] | [bullets_preview: ['- Doanh thu tăng 25% so với Q1', '- Ra mắt 3 sản phẩm mới tại Region-2', '- Mở rộng sang thị trường miền Trung Region-1']] | [ti
+
+============================================================
+[09:52:10] AI PLANNER — SEQUENTIAL RESPONSE
+============================================================
+```json
+{
+  "slides": [
+    {
+      "index": 1,
+      "layout": "one_col",
+      "chart_type": "none",
+      "color_scheme": "neutral",
+      "insight_text": "The presentation covers Company-A's business performance and sales report. It outlines key areas of focus for the company.",
+      "design_notes": "Simple bullet points require a straightforward layout, making one_col the most suitable choice.",
+      "elements": [
+        { "type": "title", "position": "top", "font_size": 24 },
+        { "type": "bullet_list", "position": "center", "font_size": 18 }
+      ]
+    },
+    {
+      "index": 2,
+      "layout": "image_split",
+      "chart_type": "none",
+      "color_scheme": "warm",
+      "insight_text": "Key highlights include a 25% increase in revenue compared to Q1, the launch of 3 new products in Region-2, expansion into Region-1, and a 12% reduction in logistics costs.",
+      "design_notes": "The presence of an image and the focus on achievements justify the use of image_split and warm color scheme.",
+      "elements": [
+        { "type": "title", "position": "top", "font_size": 24 },
+        { "type": "bullet_list", "position": "left", "font_size": 18 },
+        { "type": "image", "position": "right", "font_size": 0 }
+      ]
+    },
+    {
+      "index": 3,
+      "layout": "split_left",
+      "chart_type": "bar",
+      "color_scheme": "corporate_blue",
+      "insight_text": "Region-5 led with $1,476 in Q1 and $1,750 in Q2, followed by Region-3 and Region-4. Region-5 showed the highest revenue across both quarters.",
+      "design_notes": "The table data provided, focusing on revenue by region, suggests a split_left layout with a bar chart for easy comparison.",
+      "elements": [
+        { "type": "title", "position": "top", "font_size": 24 },
+        { "type": "chart", "position": "left", "font_size": 18 },
+        { "type": "table", "position": "left", "font_size": 14 },
+        { "type": "text", "position": "right", "font_size": 18 }
+      ]
+    },
+    {
+      "index": 4,
+      "layout": "split_left",
+      "chart_type": "bar",
+      "color_scheme": "corporate_blue",
+      "insight_text": "Similar to the previous quarter, Region-5 maintained its lead with $1,476 in Q1 and $1,750 in Q2. Region-3 and Region-4 followed, indicating a consistent revenue trend across regions.",
+      "design_notes": "Given the table data, a split_left layout with a bar chart is appropriate for comparing revenue across different regions.",
+      "elements": [
+        { "type": "title", "position": "top", "font_size": 24 },
+        { "type": "chart", "position": "left", "font_size": 18 },
+        { "type": "table", "position": "left", "font_size": 14 },
+        { "type": "text", "position": "right", "font_size": 18 }
+      ]
+    }
+  ]
+}
+```
+
+============================================================
+[10:37:22] STAGE1 — Text gửi AI (đã minimize)
+============================================================
+Độ dài: 1883 chars
+Whitelist hiện tại (0): []
+Blacklist hiện tại (0): []
+--- TEXT ---
+Tổng quan kết quả kinh doanh
+Tổng doanh thu đạt khoảng tỷ VND, so với quý trước và so với cùng kỳ năm ngoái.
+Phân tích doanh thu
+- Nhóm khách hàng doanh nghiệp đóng góp tổng doanh thu, trưởng ổn định ở mức .
+- Nhóm khách hàng cá nhân ghi nhận mức trưởng cao hơn, khoảng .
+Hiệu suất vận hành
+- Thời gian xử lý trung bình cho mỗi đơn hàng đã từ ngày xuống còn ngày (tương đương cải thiện ~ ).
+- Tỷ lệ lỗi trong quá trình xử lý vẫn dao động quanh mức , cao hơn mục tiêu đề ra là .
+Phân tích sâu hơn về hiệu suất
+- dữ liệu hiện tại đang được xử lý rời rạc giữa các phòng ban, dẫn đến việc mất trung bình – giờ mỗi tuần cho các hoạt động đối soát.
+- báo cáo nội bộ cần chỉnh sửa ít nhất một lần trước khi sử dụng chính thức, ảnh hưởng đến tốc độ ra quyết định.
+Kế hoạch cải thiện
+- Triển khai hệ thống dữ liệu tập trung với mục tiêu thời gian đối soát.
+- Tự động hóa các quy trình nhập liệu quan trọng nhằm tỷ lệ lỗi xuống dưới .
+- Chuẩn hóa bộ chỉ số báo cáo để đảm bảo báo cáo có thể sử dụng ngay mà không cần chỉnh sửa lại.
+Dự kiến kết quả
+- Hiệu suất tổng thể có thể thêm – .
+- Tiết kiệm khoảng – tỷ VND chi phí vận hành mỗi năm.
+- Hệ thống mới sẽ giúp đội ngũ phản ứng hơn với biến động thị trường, rút ngắn thời gian ra quyết định từ ngày xuống còn dưới ngày.
+Mục tiêu dài hạn
+- Xây dựng một nền tảng dữ liệu đủ để hỗ trợ các sáng kiến chiến lược, từ dự báo kinh doanh đến cá nhân hóa trải nghiệm khách hàng.
+Lợi ích của nền tảng dữ liệu
+- Hỗ trợ dự báo kinh doanh chính xác hơn.
+- Cá nhân hóa trải nghiệm khách hàng để cường sự hài lòng.
+Kế hoạch triển khai
+- Triển khai hệ thống dữ liệu tập trung và tự động hóa quy trình nhập liệu.
+- Chuẩn hóa bộ chỉ số báo cáo và đào tạo nhân viên.
+Kết luận
+- Dự kiến kết quả tích cực từ việc triển khai hệ thống dữ liệu tập trung và tự động hóa quy trình.
+- Mục tiêu dài hạn là xây dựng một nền tảng dữ liệu để hỗ trợ các sáng kiến chiến lược.
+
+============================================================
+[10:37:24] SANITIZE — Kết quả mask
+============================================================
+Whitelist đang dùng (0): []
+Blacklist đang dùng (0): []
+Các tên đã được mask (0):
+
+
+============================================================
+[10:37:27] AI PLANNER — PARALLEL
+============================================================
+10 slides | 8 keys
+{"slides": [{"index": 1, "layout": "one_col", "chart_type": "none", "color_scheme": "neutral", "insight_text": "The company has achieved a total revenue of approximately 125 billion VND, representing an 18% increase from the previous quarter and 12% from the same period last year.", "design_notes": "Using a one-col layout for a text-only slide to maintain focus on key information.", "elements": [{"type": "title", "position": "top", "font_size": 24}, {"type": "text", "position": "center", "font_size": 18}]}, {"index": 2, "layout": "one_col", "chart_type": "none", "color_scheme": "neutral", "insight_text": "Revenue growth is driven by a 15% increase from enterprise customers and a 25% increase from individual customers.", "design_notes": "Using a one-col layout for a bullet-point slide to emphasize key points.", "elements": [{"type": "title", "position": "top", "font_size": 24}, {"type": "bullet_list", "position": "center", "font_size": 18}]}, {"index": 3, "layout": "one_col", "chart_type": "none", "color_scheme": "neutral", "insight_text": "Average order processing time has decreased by 19% to 2.6 days, but error rates remain high at 4.5%.", "design_notes": "Using a one-col layout for a bullet-point slide to highlight key metrics.", "elements": [{"type": "title", "position": "top", "font_size": 24}, {"type": "bullet_list", "position": "center", "font_size": 18}]}, {"index": 4, "layout": "one_col", "chart_type": "none", "color_scheme": "neutral", "insight_text": "70% of data is currently processed in isolation between departments, resulting in an average loss of 6-8 hours per week, and 30% of internal reports require revision before use.", "design_notes": "Using a one-col layout for a bullet-point slide to emphasize the need for improvement.", "elements": [{"type": "title", "position": "top", "font_size": 24}, {"type": "bullet_list", "position": "center", "font_size": 18}]}, {"index": 5, "layout": "one_col", "chart_type": "none", "color_scheme": "warm", "insight_text"

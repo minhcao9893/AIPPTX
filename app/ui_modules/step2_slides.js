@@ -194,6 +194,8 @@ const Step2Slides = (() => {
     _selected = i;
     render();  // Re-render to expand correct card
     Layout.onSlideSelected(i, _slides[i], _configs[i]);
+    // Re-render preview voi slide moi
+    try { if (typeof Preview !== 'undefined') Preview.onDesignChange(); } catch(e) {}
   }
 
   function toggleChart(i, val) {

@@ -186,10 +186,14 @@ def _call_groq_json(
     if len(pool) == 0:
         raise Stage1ConfigError("No API keys available (check config.json or keys.txt)")
 
+    # Retry ít nhất số key có trong pool để đảm bảo thử hết
+    attempts = max(max_retries, len(pool))
     last_retryable_err: Optional[Exception] = None
 
-    for attempt in range(max_retries):
+    for attempt in range(attempts):
         key = pool.next_key()
+        if not key:
+            break
         try:
             client = Groq(api_key=key)
             resp = client.chat.completions.create(
@@ -208,14 +212,20 @@ def _call_groq_json(
         except Exception as e:
             if _is_retryable_error(e):
                 last_retryable_err = e
-                print(f"  ⚠️ Stage 1 key bị restrict, rotating... ({str(e)[:80]})", file=sys.stderr)
-                time.sleep(1.0 + 0.5 * attempt)
+                err_str = str(e)
+                # Nếu key bị restrict vĩnh viễn → mark_bad để không dùng lại
+                if 'restricted' in err_str.lower() or 'organization' in err_str.lower():
+                    pool.mark_bad(key)
+                    print(f'  ⚠️ Stage 1 key bị restrict vĩnh viễn, chuyển key khác...', file=sys.stderr)
+                else:
+                    print(f'  ⚠️ Stage 1 rate limit, rotating... ({str(e)[:80]})', file=sys.stderr)
+                    time.sleep(1.0 + 0.5 * attempt)
                 continue
             else:
-                raise Stage1ApiError(f"Non-retryable API error: {e}") from e
+                raise Stage1ApiError(f'Non-retryable API error: {e}') from e
 
     # Tất cả keys fail
-    print(f"  ⚠️ Stage 1 skipped: All keys exhausted", file=sys.stderr)
+    print(f'  ⚠️ Stage 1 skipped: All keys exhausted', file=sys.stderr)
     return None
 
 
