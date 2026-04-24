@@ -37,7 +37,8 @@ APP_DIR       = Path(__file__).resolve().parent
 
 # If running on Render with persistent disk, use it. Otherwise use local dirs.
 if os.environ.get("RENDER"):
-    PERSISTENT_DIR = Path("/app/persistent")
+    # /opt/render/project/src is the writable project root on Render
+    PERSISTENT_DIR = Path("/opt/render/project/src")
     INPUT_DIR      = PERSISTENT_DIR / "input"
     OUTPUT_DIR     = PERSISTENT_DIR / "output"
     TEMPLATE_DIR   = PERSISTENT_DIR / "template"
